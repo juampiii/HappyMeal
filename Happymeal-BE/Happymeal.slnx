@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Happymeal.API/Happymeal.API.csproj" />
+    <Project Path="src/Happymeal.Application/Happymeal.Application.csproj" />
+    <Project Path="src/Happymeal.Common/Happymeal.Common.csproj" />
+    <Project Path="src/Happymeal.Domain/Happymeal.Domain.csproj" />
+    <Project Path="src/Happymeal.Infrastructure/Happymeal.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Happymeal.IntegrationTests/Happymeal.IntegrationTests.csproj" />
+    <Project Path="tests/Happymeal.UnitTests/Happymeal.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="docker-compose.yml" />
+    <File Path="global.json" />
+  </Folder>
+</Solution>

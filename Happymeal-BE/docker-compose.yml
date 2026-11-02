@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: happymeal-postgres
+    environment:
+      # Local development credentials only. They match appsettings.Development.json.
+      POSTGRES_DB: happymeal
+      POSTGRES_USER: happymeal
+      POSTGRES_PASSWORD: happymeal_local_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - happymeal-postgres-data:/var/lib/postgresql
+
+volumes:
+  happymeal-postgres-data:
