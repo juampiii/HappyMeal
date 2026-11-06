@@ -56,20 +56,22 @@ NSubstitute on `IUnitOfWork` and `IRecipeRepository`.
 
 ### Phase 4: Integration tests
 
-- [ ] 10. `Recipes/RecipesEndpointsTests.cs`:
+- [x] 10. `Recipes/RecipesEndpointsTests.cs`:
   - `POST`: 201 with `Location`, 400 `ValidationProblemDetails`, 409 with duplicated id, persisted audit fields (`CreatedOn`, `CreatedBy`).
   - `GET` by id: 200, 404 `ProblemDetails`.
   - `GET` list.
   - `PUT`: 200 (with `ModifiedOn`, `ModifiedBy`), 404, 400.
   - `DELETE`: 204, 404.
-- [ ] 11. `Recipes/RecipeOutboxTests.cs`: after create, the `OutboxMessage` exists in the same transaction. Then poll until `ProcessedOn` is not null and `DeadLetteredOn` is null. Keep `WaitForAsync` in the class. Move it to `TestBase` only if a second class needs it.
+- [x] 11. `Recipes/RecipeOutboxTests.cs`: after create, the `OutboxMessage` exists in the same transaction. Then poll until `ProcessedOn` is not null and `DeadLetteredOn` is null. Keep `WaitForAsync` in the class. Move it to `TestBase` only if a second class needs it.
 
 ### Phase 5: Verification
 
 - [x] 12. Build the solution and run the unit tests.
-- [ ] 13. Ask the user before running the integration tests.
+- [x] 13. Ask the user before running the integration tests.
 
 ## Notes and deviations
 
 - Step 8 skipped: `Sender` is internal and uses reflection over the service provider. Integration tests cover it through the real pipeline.
 - Unit tests: 40 passing. Build has 0 warnings and 0 errors.
+- Phase 4 written and compiling (14 endpoint tests, 5 outbox tests). Test run summary: Passed! (succeeded: 59)
+- Delivery test waits for the real `OutboxDispatcher` (default poll 2s, timeout 15s). `WaitForAllProcessedAsync` stays inside `RecipeOutboxTests`.
