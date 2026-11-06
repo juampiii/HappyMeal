@@ -7,7 +7,12 @@ namespace Happymeal.Infrastructure.Repositories;
 
 internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRepository
 {
-    public Task<Recipe?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<Recipe?> GetByIdTrackedAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Recipes.AsTracking().FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+    }
+
+    public Task<Recipe?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return dbContext.Recipes.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
@@ -20,7 +25,6 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
     public async Task<IReadOnlyList<Recipe>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Recipes
-            .AsNoTracking()
             .OrderBy(r => r.Name)
             .ToListAsync(cancellationToken);
     }

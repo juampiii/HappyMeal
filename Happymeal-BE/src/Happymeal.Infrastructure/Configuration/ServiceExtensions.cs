@@ -25,6 +25,7 @@ public static class ServiceExtensions
 
             services.AddDbContext<HappymealDbContext>((serviceProvider, options) => options
                 .UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditableInterceptor>()));
 
             services
