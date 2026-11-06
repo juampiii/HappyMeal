@@ -6,7 +6,7 @@ description: Consult when a unit test is confusing or flaky, or when deciding be
 ## Unit or integration?
 
 - Unit: domain invariants, params validation (`IValidatable`), command and query handlers with substitutes, domain event handler logic, pure helpers (`OutboxSerializer`, `ValidationFailureExtensions`).
-- Integration: EF mappings and queries, migrations, `UnitOfWork` outbox staging, `OutboxDispatcher` delivery, HTTP status codes and ProblemDetails bodies.
+- Integration: EF mappings and queries, migrations, `UnitOfWork` outbox staging, `OutboxDispatcher` delivery, HTTP status codes and ProblemDetails bodies, `AuditableInterceptor` (it needs a real `DbContext` and the unit test project has no InMemory provider).
 
 ## Common Pitfalls
 
