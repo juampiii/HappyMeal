@@ -4,8 +4,9 @@ namespace Happymeal.Application.Common.Interfaces;
 
 public interface IRecipeRepository
 {
-    /// <summary>Returns a tracked recipe, so changes and domain events are picked up by <see cref="IUnitOfWork.SaveEntitiesAsync"/>.</summary>
-    Task<Recipe?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<Recipe?> GetByIdTrackedAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<Recipe?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
 

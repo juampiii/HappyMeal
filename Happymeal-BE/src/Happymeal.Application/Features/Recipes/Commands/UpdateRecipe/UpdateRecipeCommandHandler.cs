@@ -11,19 +11,19 @@ public sealed class UpdateRecipeCommandHandler(IUnitOfWork unitOfWork) : IComman
         UpdateRecipeCommand command,
         CancellationToken cancellationToken = default)
     {
-        var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
-        if (recipe is null)
+        var recipeTracked = await unitOfWork.RecipeRepository.GetByIdTrackedAsync(command.Id, cancellationToken);
+        if (recipeTracked is null)
         {
             return Error.NotFound($"Recipe {command.Id} was not found.");
         }
 
-        var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description));
+        var updateResult = recipeTracked.Update(new RecipeParams(command.Name, command.Description));
         if (updateResult.IsFailure)
         {
             return updateResult.Error!;
         }
 
         await unitOfWork.SaveEntitiesAsync(cancellationToken);
-        return Result.Success(RecipeDto.From(recipe));
+        return Result.Success(RecipeDto.From(recipeTracked));
     }
 }

@@ -8,14 +8,14 @@ public sealed class DeleteRecipeCommandHandler(IUnitOfWork unitOfWork) : IComman
 {
     public async Task<Result> HandleAsync(DeleteRecipeCommand command, CancellationToken cancellationToken = default)
     {
-        var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
-        if (recipe is null)
+        var recipeTracked = await unitOfWork.RecipeRepository.GetByIdTrackedAsync(command.Id, cancellationToken);
+        if (recipeTracked is null)
         {
             return Error.NotFound($"Recipe {command.Id} was not found.");
         }
 
-        recipe.MarkAsDeleted();
-        unitOfWork.RecipeRepository.Delete(recipe);
+        recipeTracked.MarkAsDeleted();
+        unitOfWork.RecipeRepository.Delete(recipeTracked);
 
         var wasSaved = await unitOfWork.SaveEntitiesAsync(cancellationToken);
         return !wasSaved

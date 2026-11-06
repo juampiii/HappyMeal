@@ -10,7 +10,7 @@ public sealed class GetRecipeByIdQueryHandler(IUnitOfWork unitOfWork) : IQueryHa
         GetRecipeByIdQuery query,
         CancellationToken cancellationToken = default)
     {
-        var recipe = await unitOfWork.RecipeRepository.GetAsync(query.Id, cancellationToken);
+        var recipe = await unitOfWork.RecipeRepository.GetByIdAsync(query.Id, cancellationToken);
         return recipe is null
             ? Error.NotFound($"Recipe {query.Id} was not found.")
             : Result.Success(RecipeDto.From(recipe));
