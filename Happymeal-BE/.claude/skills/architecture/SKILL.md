@@ -31,7 +31,7 @@ The structure merges two reference codebases (Campus-BE and Catalog-BE). Applica
 ## Core Rules
 
 - Respect inward dependencies: Domain only knows `Happymeal.Common`. Application defines commands, queries, handlers and abstractions. Infrastructure implements them. API composes and exposes HTTP.
-- Use vertical slices under `Happymeal.Application/Features/<Feature>/{Commands,Queries,DomainEventHandlers}`.
+- Use vertical slices under `Happymeal.Application/Features/<Feature>/{Commands,Queries,DomainEventHandlers}`. For command/query naming and file layout, follow [`feature-workflow.md`](references/feature-workflow.md). This groups Application use cases; the existing Clean Architecture layer boundaries still apply.
 - Keep controllers thin. Build the command or query, call `ISender.SendAsync`, and return `this.ToActionResult(result)`.
 - Keep business invariants in Domain. Params records implement `IValidatable`; factories and mutators call `Validate()` before changing state and return `Result`/`Result<T>`, not exceptions, for expected failures. Domain has no third-party packages.
 - Handlers return `Result` or `Result<T>` with an `Error` for expected failures. Do not throw for business outcomes.

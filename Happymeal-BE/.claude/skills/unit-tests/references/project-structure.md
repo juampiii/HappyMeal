@@ -35,7 +35,7 @@ Happymeal.UnitTests/
 └── Builders/                     shared test data builders, only when two or more classes need them
 ```
 
-Namespace = `Happymeal.UnitTests.` + folder path. One test class per production class, named `<ClassName>Tests`.
+Namespace = `Happymeal.UnitTests.` + folder path. One test class per production class, named `<ClassName>Tests`. For nested Feature handlers, keep the descriptive `<UseCase>CommandHandlerTests` or `<UseCase>QueryHandlerTests` class/file names (for example `CreateRecipeCommandHandlerTests` tests `CreateRecipeFeature.Handler`). Avoid naming every test class `HandlerTests`.
 
 ## Running
 

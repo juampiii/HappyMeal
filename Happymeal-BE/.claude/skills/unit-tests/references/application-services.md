@@ -23,7 +23,7 @@ public async Task HandleAsync_WhenRecipeExists_ShouldUpdateAndRaiseRecipeUpdated
     _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
 
     // Act
-    var result = await _sut.HandleAsync(new UpdateRecipeCommand(recipe.Id, "Burger XL", "Big"), CancellationToken.None);
+    var result = await _sut.HandleAsync(new UpdateRecipeFeature.Command(recipe.Id, "Burger XL", "Big"), CancellationToken.None);
 
     // Assert
     result.IsSuccess.Should().BeTrue();
@@ -43,7 +43,7 @@ await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>()
 
 Notes:
 
-- Call `HandleAsync` directly. Do not go through a real `ISender` in a unit test.
+- Instantiate `<UseCase>Feature.Handler` and call `HandleAsync` directly with `<UseCase>Feature.Command` or `<UseCase>Feature.Query`. Import the use-case namespace; the Feature suffix avoids namespace collisions without aliases. Do not go through a real `ISender` in a unit test.
 - `SaveEntitiesAsync` is substituted, so the outbox staging is not exercised. Domain events stay on the entity, which is what makes part 3 possible.
 - `UnitOfWork` outbox staging and the dispatcher are covered by integration tests.
 

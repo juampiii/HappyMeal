@@ -63,7 +63,7 @@ What lives here:
 
 - `Common/Messaging`: `ICommand`, `ICommand<TResponse>`, `IQuery<TResponse>`, `ICommandHandler<TCommand>`, `ICommandHandler<TCommand,TResponse>`, `IQueryHandler<TQuery,TResponse>`, `ISender` and its internal `Sender`.
 - `Common/Interfaces`: `IUnitOfWork` and repository interfaces implemented by Infrastructure.
-- `Features/<Feature>/`: `Commands/<Name>/` and `Queries/<Name>/` folders, each with the request record and its handler. Feature DTOs (`RecipeDto` with a static `From(entity)` mapper) sit at the feature root. Domain event handlers go in `DomainEventHandlers/`.
+- `Features/<Feature>/`: `Commands/<Name>/` and `Queries/<Name>/` folders, each with a single `<Name>Feature.cs` containing the nested request record and its handler. Feature DTOs (`RecipeDto` with a static `From(entity)` mapper) sit at the feature root. Domain event handlers go in `DomainEventHandlers/`.
 - `Configuration/ServiceExtensions.AddApplicationServices`: registers request handlers, `ISender` and the domain event handlers of this assembly.
 
 ### Commands, queries and handlers
@@ -71,13 +71,21 @@ What lives here:
 Each use case has one `<UseCase>Feature.cs` file with a public static container and nested public request and handler types. Commands use `Command`, queries use `Query`, and both use `Handler`. Keep existing folders and namespaces; the Feature suffix avoids collisions with the namespace. The assembly scanner registers public nested handlers.
 
 ```csharp
-// Request declarations inside their respective Feature classes:
-// CreateRecipeFeature:
-public sealed record Command(Guid? Id, string Name, string? Description) : ICommand<RecipeDto>;
-// DeleteRecipeFeature:
-public sealed record Command(Guid Id) : ICommand; // no response value
-// GetRecipeByIdFeature:
-public sealed record Query(Guid Id) : IQuery<RecipeDto>;
+// Request declarations; each file also contains its own nested Handler.
+public static class CreateRecipeFeature
+{
+    public sealed record Command(Guid? Id, string Name, string? Description) : ICommand<RecipeDto>;
+}
+
+public static class DeleteRecipeFeature
+{
+    public sealed record Command(Guid Id) : ICommand; // no response value
+}
+
+public static class GetRecipeByIdFeature
+{
+    public sealed record Query(Guid Id) : IQuery<RecipeDto>;
+}
 
 public interface ICommandHandler<in TCommand> where TCommand : ICommand
 {

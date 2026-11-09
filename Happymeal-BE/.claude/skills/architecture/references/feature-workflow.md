@@ -9,6 +9,18 @@ Use this workflow to add or change a feature. Keep the change inside its vertica
 - Response DTO at the feature root, with a static `From(entity)` mapper.
 - Repository interface methods in `Common/Interfaces` for any new persistence need.
 
+Example layout:
+
+```text
+Features/Recipes/
+  Commands/CreateRecipe/CreateRecipeFeature.cs   # Command + Handler
+  Queries/GetRecipeById/GetRecipeByIdFeature.cs  # Query + Handler
+  RecipeDto.cs                                 # shared response DTO
+  DomainEventHandlers/LogRecipeLifecycleDomainEventHandler.cs
+```
+
+The folder and namespace name is `CreateRecipe`; the container and file name is `CreateRecipeFeature`. Use the same convention for new use cases. Domain event handlers remain separate because they react to events rather than handling a command/query request.
+
 Do not write Infrastructure before the Application contract is clear.
 
 ## 2. Place Business Rules
@@ -43,7 +55,7 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 ## 6. Expose Through the API
 
 - Add the action to the feature controller in `Controllers/`. Name it `<Verb>Async`.
-- Build the command or query from route and body and call `sender.SendAsync(...)`.
+- Build `<Name>Feature.Command` or `<Name>Feature.Query` from route and body and call `sender.SendAsync(...)`, for example `sender.SendAsync(new GetRecipeByIdFeature.Query(id), cancellationToken)`.
 - Return `this.ToActionResult(result)`. Use the `onSuccess` overload for `201 Created` and give the target action `[ActionName(nameof(...))]`.
 - Add `[ProducesResponseType<T>]` for the success type and `ProblemDetails`/`ValidationProblemDetails` for the errors.
 
