@@ -57,7 +57,7 @@ public sealed class RecipesController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.SendAsync(
-            new UpdateRecipeCommand(id, request.Name, request.Description), cancellationToken);
+            new UpdateRecipeFeature.Command(id, request.Name, request.Description), cancellationToken);
 
         return this.ToActionResult(result);
     }

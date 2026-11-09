@@ -59,9 +59,9 @@ Commit: `refactor: group create recipe`
 
 Commit: `refactor: group update recipe`
 
-- [ ] 5. Combine `UpdateRecipeCommand.cs` and `UpdateRecipeCommandHandler.cs` into `Commands/UpdateRecipe/UpdateRecipeFeature.cs`, with `Command` and `Handler`. Remove the old files.
-- [ ] 6. Update `RecipesController.UpdateAsync` and `UpdateRecipeCommandHandlerTests` to use `UpdateRecipeFeature.Command` and `.Handler`.
-- [ ] 7. Build the solution and run `UpdateRecipeCommandHandlerTests` (success, not found and validation). Preserve current save behavior. Commit this slice and plan progress.
+- [x] 5. Combine `UpdateRecipeCommand.cs` and `UpdateRecipeCommandHandler.cs` into `Commands/UpdateRecipe/UpdateRecipeFeature.cs`, with `Command` and `Handler`. Remove the old files.
+- [x] 6. Update `RecipesController.UpdateAsync` and `UpdateRecipeCommandHandlerTests` to use `UpdateRecipeFeature.Command` and `.Handler`.
+- [x] 7. Build the solution and run `UpdateRecipeCommandHandlerTests` (success, not found and validation). Preserve current save behavior. Commit this slice and plan progress.
 
 ### Phase 3: Delete recipe
 
@@ -111,5 +111,6 @@ Commit: `refactor: group list recipes`
 
 ### Execution results
 
-- Migration status: CreateRecipe complete; UpdateRecipe, DeleteRecipe, GetRecipeById and GetRecipes pending.
+- Migration status: CreateRecipe and UpdateRecipe complete; DeleteRecipe, GetRecipeById and GetRecipes pending.
 - CreateRecipe: solution build passed with 0 warnings/errors; all 5 handler tests passed. Removed the obsolete duplicate container.
+- UpdateRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.

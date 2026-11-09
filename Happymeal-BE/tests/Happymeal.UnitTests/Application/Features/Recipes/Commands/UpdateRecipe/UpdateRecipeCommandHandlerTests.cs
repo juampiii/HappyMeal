@@ -10,12 +10,12 @@ namespace Happymeal.UnitTests.Application.Features.Recipes.Commands.UpdateRecipe
 public class UpdateRecipeCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly UpdateRecipeCommandHandler _sut;
+    private readonly UpdateRecipeFeature.Handler _sut;
 
     public UpdateRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new UpdateRecipeCommandHandler(_unitOfWork);
+        _sut = new UpdateRecipeFeature.Handler(_unitOfWork);
     }
 
     private static Recipe CreateRecipe()
@@ -33,7 +33,7 @@ public class UpdateRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(recipe.Id, Arg.Any<CancellationToken>()).Returns(recipe);
 
         // Act
-        var result = await _sut.HandleAsync(new UpdateRecipeCommand(recipe.Id, "Burger XL", "Big"), CancellationToken.None);
+        var result = await _sut.HandleAsync(new UpdateRecipeFeature.Command(recipe.Id, "Burger XL", "Big"), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -52,7 +52,7 @@ public class UpdateRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(id, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         // Act
-        var result = await _sut.HandleAsync(new UpdateRecipeCommand(id, "Burger", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new UpdateRecipeFeature.Command(id, "Burger", null), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -68,7 +68,7 @@ public class UpdateRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(recipe.Id, Arg.Any<CancellationToken>()).Returns(recipe);
 
         // Act
-        var result = await _sut.HandleAsync(new UpdateRecipeCommand(recipe.Id, "", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new UpdateRecipeFeature.Command(recipe.Id, "", null), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
