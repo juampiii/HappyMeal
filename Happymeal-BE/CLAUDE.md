@@ -27,4 +27,4 @@ Integration tests need Docker and are slow. Run them only after asking.
 - Ask before adding any production package. Domain has no third-party packages: params implement `IValidatable` and rules are written by hand. No FluentValidation.
 - Handlers return `Result`/`Result<T>` with an `Error`. Errors are ProblemDetails. Validation errors are `400 ValidationProblemDetails`.
 - Domain events go through the outbox. Handlers must be idempotent.
-- Naming follows Microsoft eShopOnContainers: `<Verb><Entity>Command` + `...CommandHandler`, `...Query` + `...QueryHandler`, `<Entity><Verb>DomainEvent`, `Async` suffix on every async method.
+- Application use cases use `<UseCase>Feature.cs`: a public static class with a nested `Command` or `Query` record and a public sealed `Handler`. Keep existing Commands/Queries folders and namespaces; the Feature suffix prevents namespace collisions. Domain events retain `<Entity><Verb>DomainEvent`; every async method retains the `Async` suffix.

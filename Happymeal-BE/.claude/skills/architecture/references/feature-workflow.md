@@ -5,7 +5,7 @@ Use this workflow to add or change a feature. Keep the change inside its vertica
 ## 1. Define Contracts First
 
 - Request DTO in `Happymeal.API/Dtos` if the HTTP body changes.
-- Command (`ICommand` or `ICommand<TResponse>`) or query (`IQuery<TResponse>`) record in `Features/<Feature>/{Commands,Queries}/<Name>/`.
+- Nested `Command` (`ICommand` or `ICommand<TResponse>`) or `Query` (`IQuery<TResponse>`) record in a public static `<Name>Feature` class in `Features/<Feature>/{Commands,Queries}/<Name>/<Name>Feature.cs`.
 - Response DTO at the feature root, with a static `From(entity)` mapper.
 - Repository interface methods in `Common/Interfaces` for any new persistence need.
 
@@ -26,7 +26,7 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 
 ## 4. Build the Application Slice
 
-1. Add the handler next to its request: `public sealed class <Name>CommandHandler(...) : ICommandHandler<TCommand, TResponse>` (or `<Name>QueryHandler : IQueryHandler<TQuery, TResponse>`). The scanner registers it.
+1. Nest a `public sealed class Handler(...)` alongside `Command` or `Query` inside `<Name>Feature`. Implement `ICommandHandler<Command>`, `ICommandHandler<Command, TResponse>` or `IQueryHandler<Query, TResponse>` as appropriate. The assembly scanner includes nested handlers. Call sites use `<Name>Feature.Command` or `<Name>Feature.Query`, avoiding namespace aliases.
 2. Use guard clauses: not found -> `return Error.NotFound(...)`, conflict -> `return Error.Conflict(...)`.
 3. Call the Domain method. On failure pass the error through: `return result.Error!;`.
 4. Persist through `IUnitOfWork` repositories and call `SaveEntitiesAsync` once (commands only).

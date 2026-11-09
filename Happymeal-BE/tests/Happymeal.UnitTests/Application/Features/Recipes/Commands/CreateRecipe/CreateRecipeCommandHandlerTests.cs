@@ -10,12 +10,12 @@ namespace Happymeal.UnitTests.Application.Features.Recipes.Commands.CreateRecipe
 public class CreateRecipeCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly CreateRecipeCommandHandler _sut;
+    private readonly CreateRecipeFeature.Handler _sut;
 
     public CreateRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new CreateRecipeCommandHandler(_unitOfWork);
+        _sut = new CreateRecipeFeature.Handler(_unitOfWork);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class CreateRecipeCommandHandlerTests
         _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
 
         // Act
-        var result = await _sut.HandleAsync(new CreateRecipeCommand(id, "Burger", "With fries"), CancellationToken.None);
+        var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(id, "Burger", "With fries"), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -49,7 +49,7 @@ public class CreateRecipeCommandHandlerTests
         _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
 
         // Act
-        var result = await _sut.HandleAsync(new CreateRecipeCommand(null, "Burger", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(null, "Burger", null), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -61,7 +61,7 @@ public class CreateRecipeCommandHandlerTests
     public async Task HandleAsync_WhenNameIsEmpty_ShouldReturnValidationErrorAndNotSave()
     {
         // Act
-        var result = await _sut.HandleAsync(new CreateRecipeCommand(null, "", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(null, "", null), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -79,7 +79,7 @@ public class CreateRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.ExistsAsync(id, Arg.Any<CancellationToken>()).Returns(true);
 
         // Act
-        var result = await _sut.HandleAsync(new CreateRecipeCommand(id, "Burger", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(id, "Burger", null), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -96,7 +96,7 @@ public class CreateRecipeCommandHandlerTests
         _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(false);
 
         // Act
-        var result = await _sut.HandleAsync(new CreateRecipeCommand(null, "Burger", null), CancellationToken.None);
+        var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(null, "Burger", null), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();

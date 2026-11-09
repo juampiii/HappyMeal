@@ -68,12 +68,16 @@ What lives here:
 
 ### Commands, queries and handlers
 
-Naming follows eShopOnContainers: `<Verb><Entity>Command` / `<Verb><Entity>CommandHandler`, `Get<Entity>...Query` / `Get<Entity>...QueryHandler`.
+Each use case has one `<UseCase>Feature.cs` file with a public static container and nested public request and handler types. Commands use `Command`, queries use `Query`, and both use `Handler`. Keep existing folders and namespaces; the Feature suffix avoids collisions with the namespace. The assembly scanner registers public nested handlers.
 
 ```csharp
-public sealed record CreateRecipeCommand(string Name, string? Description) : ICommand<RecipeDto>;
-public sealed record DeleteRecipeCommand(Guid Id) : ICommand;                       // no response value
-public sealed record GetRecipeByIdQuery(Guid Id) : IQuery<RecipeDto>;
+// Request declarations inside their respective Feature classes:
+// CreateRecipeFeature:
+public sealed record Command(Guid? Id, string Name, string? Description) : ICommand<RecipeDto>;
+// DeleteRecipeFeature:
+public sealed record Command(Guid Id) : ICommand; // no response value
+// GetRecipeByIdFeature:
+public sealed record Query(Guid Id) : IQuery<RecipeDto>;
 
 public interface ICommandHandler<in TCommand> where TCommand : ICommand
 {
@@ -122,24 +126,29 @@ Read them with `IsSuccess`/`IsFailure`, `Error` and `Value`. `Value` throws on a
 ### Handler shape
 
 ```csharp
-public sealed class UpdateRecipeCommandHandler(IUnitOfWork unitOfWork) : ICommandHandler<UpdateRecipeCommand, RecipeDto>
+public static class UpdateRecipeFeature
 {
-    public async Task<Result<RecipeDto>> HandleAsync(UpdateRecipeCommand command, CancellationToken cancellationToken = default)
+    public sealed record Command(Guid Id, string Name, string? Description) : ICommand<RecipeDto>;
+
+    public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command, RecipeDto>
     {
-        var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
-        if (recipe is null)
+        public async Task<Result<RecipeDto>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
-            return Error.NotFound($"Recipe {command.Id} was not found.");
-        }
+            var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
+            if (recipe is null)
+            {
+                return Error.NotFound($"Recipe {command.Id} was not found.");
+            }
 
-        var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description));
-        if (updateResult.IsFailure)
-        {
-            return updateResult.Error!;
-        }
+            var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description));
+            if (updateResult.IsFailure)
+            {
+                return updateResult.Error!;
+            }
 
-        await unitOfWork.SaveEntitiesAsync(cancellationToken);
-        return Result.Success(RecipeDto.From(recipe));
+            await unitOfWork.SaveEntitiesAsync(cancellationToken);
+            return Result.Success(RecipeDto.From(recipe));
+        }
     }
 }
 ```
@@ -189,7 +198,7 @@ var id = command.Id ?? Guid.CreateVersion7();
 
 - A client may send its own id (`CreateRecipeRequestDto.Id`). This makes creation idempotent for retries and allows optimistic UI.
 - When the id already exists, the handler returns `Error.Conflict` (409). When resources become per user, keep returning 409 for ids of other users, so the API does not reveal that they exist.
-- The existence check and the insert are not atomic. Two concurrent requests with the same id can both pass the check; the second fails on the primary key (500). There is a `// TODO` in `CreateRecipeCommandHandler`.
+- The existence check and the insert are not atomic. Two concurrent requests with the same id can both pass the check; the second fails on the primary key (500). There is a `// TODO` in `CreateRecipeFeature.Handler`.
 - Guid v7 is time ordered and PostgreSQL compares `uuid` byte by byte, so v7 keys do not fragment the index.
 
 ## Unit of Work and Domain Events (outbox)
