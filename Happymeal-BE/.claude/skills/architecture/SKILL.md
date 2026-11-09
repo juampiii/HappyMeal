@@ -3,40 +3,9 @@ name: architecture
 description: Explains the Happymeal-BE architecture - Clean Architecture layers, CQRS-style commands and queries with their handlers and ISender (nested requests and handlers grouped by use case, without MediatR), the unified Result/Error type, domain validation with IValidatable (no FluentValidation), the transactional outbox for domain events and IDomainEventHandler, the ProblemDetails error contract, and AggregateRoot and IAuditable audit fields, client-assignable ids, and runtime setup (EF Core PostgreSQL, docker-compose, OpenAPI + Scalar). Use when onboarding, designing or reviewing a feature, deciding which layer code belongs in, adding a command, query, domain event or domain event handler, adding validation, or changing persistence and startup.
 ---
 
-# Happymeal-BE Architecture
-
-Use this skill for a project-wide view before you implement, review, debug or explain Happymeal-BE. The mental model is simple: the API receives requests and sends commands and queries, Application handles them, Domain owns business rules, and Infrastructure supplies persistence and background delivery of domain events.
-
-The structure merges two reference codebases (Campus-BE and Catalog-BE). Application use cases group a nested `Command` or `Query` and `Handler` in a public static `<UseCase>Feature` class and matching file, for example `CreateRecipeFeature.Command` and `CreateRecipeFeature.Handler`. Existing Commands/Queries folders and namespaces stay in place; the Feature suffix prevents namespace collisions. Domain events and async methods retain the eShopOnContainers-inspired naming: `RecipeCreatedDomainEvent`, `IDomainEventHandler<T>`, `SaveEntitiesAsync`, `Async` suffix. MediatR is not used; the contracts are in-house. Where the reference codebases differed, the reference files say which option Happymeal chose. Do not reintroduce the other one.
-
-## Available Files
+Read the shared skill before starting the task. Resolve its reference links relative to the shared file.
 
 | File | When to read it |
-|------|-----------------|
-| [`project-map.md`](references/project-map.md) | Solution structure, project responsibilities, dependency direction, packages. |
-| [`layers-and-flows.md`](references/layers-and-flows.md) | Layers, commands/queries/handlers and `ISender`, `Result`/`Error`, Unit of Work, outbox and domain event handlers. |
-| [`validation-strategy.md`](references/validation-strategy.md) | Where validation lives and the ProblemDetails / ValidationProblemDetails contract. |
-| [`runtime-and-integrations.md`](references/runtime-and-integrations.md) | API startup, database, migrations, outbox dispatcher, OpenAPI, health checks, local Docker. |
-| [`feature-workflow.md`](references/feature-workflow.md) | Step-by-step guide to add or change a feature. |
-
-## Quick Routing
-
-- Understanding the repository from zero: read [`project-map.md`](references/project-map.md), then [`layers-and-flows.md`](references/layers-and-flows.md).
-- Designing a new endpoint, command or query: read [`feature-workflow.md`](references/feature-workflow.md) and [`layers-and-flows.md`](references/layers-and-flows.md).
-- Raising a domain event or reacting to one: read the Unit of Work and Domain Event Handlers sections in [`layers-and-flows.md`](references/layers-and-flows.md).
-- Adding validation or changing an error response: read [`validation-strategy.md`](references/validation-strategy.md).
-- Changing the database model, migrations, startup or configuration: read [`runtime-and-integrations.md`](references/runtime-and-integrations.md).
-- Planning test coverage: read [`feature-workflow.md`](references/feature-workflow.md), then use the `unit-tests` or `integration-tests` skill.
-
-## Core Rules
-
-- Respect inward dependencies: Domain only knows `Happymeal.Common`. Application defines commands, queries, handlers and abstractions. Infrastructure implements them. API composes and exposes HTTP.
-- Use vertical slices under `Happymeal.Application/Features/<Feature>/{Commands,Queries,DomainEventHandlers}`. For command/query naming and file layout, follow [`feature-workflow.md`](references/feature-workflow.md). This groups Application use cases; the existing Clean Architecture layer boundaries still apply.
-- Keep controllers thin. Build the command or query, call `ISender.SendAsync`, and return `this.ToActionResult(result)`.
-- Keep business invariants in Domain. Params records implement `IValidatable`; factories and mutators call `Validate()` before changing state and return `Result`/`Result<T>`, not exceptions, for expected failures. Domain has no third-party packages.
-- Handlers return `Result` or `Result<T>` with an `Error` for expected failures. Do not throw for business outcomes.
-- Use `IUnitOfWork` repositories for tracked persistence and call `SaveEntitiesAsync` once per command.
-- Domain events go through the transactional outbox. Handlers run later, out of band, at least once. Make them idempotent.
-- Async methods end in `Async` (Microsoft convention), including our own (`HandleAsync`, `GetAsync`, `SaveEntitiesAsync`). Controller actions too.
-- No MediatR, MassTransit, Aspire, DYPlatform or DYCommon packages. Ask before adding a third-party package, and never add one with a commercial license (for example FluentAssertions 8+, MediatR 13+, MassTransit 9+).
-- Do not invent architecture for the current task. Extend the existing slices, contracts and registration patterns first.
+| --- | --- |
+| [Shared skill](../../../skills/architecture/SKILL.md) | Whenever this skill is invoked. |
+| [`project-map.md`](../../../skills/architecture/references/project-map.md) | When you need the solution structure, project responsibilities, dependencies or packages. |

@@ -1,13 +1,13 @@
 # Project Map
 
-Happymeal-BE is a .NET 10 (C# 14) solution with a pragmatic Clean Architecture. It has no Aspire host and no platform packages.
+Happymeal-BE is a .NET 10 (C# 14) solution with a pragmatic Clean Architecture.
 
 ## Solution Layout
 
 ```text
 Happymeal.slnx
 ├── src/
-│   ├── Happymeal.Common          local artifact that replaces DYCommon
+│   ├── Happymeal.Common          shared building blocks
 │   ├── Happymeal.Domain
 │   ├── Happymeal.Application
 │   ├── Happymeal.Infrastructure
@@ -20,7 +20,7 @@ Happymeal.slnx
 └── .config/dotnet-tools.json     dotnet-ef
 ```
 
-Folders, project files, namespaces and assembly names all use `Happymeal.*` (no hyphen, unlike Catalog-BE).
+Folders, project files, namespaces and assembly names use the `Happymeal.*` convention.
 
 ## Project Responsibilities
 

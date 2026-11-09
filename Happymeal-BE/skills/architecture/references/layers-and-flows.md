@@ -53,7 +53,7 @@ Rules:
 - `PropertyName` is the C# name (`nameof(Name)`). The API converts it to the JSON name.
 - Expected invalid input returns an `Error`. Exceptions are only for programming errors (`ArgumentException`, `InvalidOperationException`). Throwing still costs microseconds per exception, so never use it for validation flow.
 
-Chosen over Campus-BE and Catalog-BE: no FluentValidation, no `DomainResult`, no `DomainChangeRequestBase`. Chosen over eShop: `IValidatable` is inspired by `IValidatableObject` in `BasketItem`, but it is called by the factory itself, so an invalid entity cannot exist. Domain methods are synchronous, so they have no `Async` suffix.
+Domain methods are synchronous.
 
 ## Application Layer
 
@@ -104,9 +104,9 @@ public interface IQueryHandler<in TQuery, TResponse> where TQuery : IQuery<TResp
 ```
 
 - Commands change state. Queries only read. A query handler never calls `SaveEntitiesAsync`.
-- Chosen over eShopOnContainers: queries have handlers (not an `OrderQueries`-style class with Dapper), so commands and queries share one dispatch path.
+- Commands and queries have their own handlers and share the same dispatch path.
 - `AddApplicationServices` scans the assembly and registers every closed handler interface. No manual registration.
-- Callers use `ISender.SendAsync(request)`. It resolves the single handler for the request type (`IMediator.Send` in eShop). A missing handler throws `InvalidOperationException`: that is a wiring bug, not a business outcome.
+- Callers use `ISender.SendAsync(request)`. It resolves the single handler for the request type. A missing handler throws `InvalidOperationException` and indicates a registration error.
 
 ### Result and Error
 
@@ -172,7 +172,7 @@ Handlers use guard clauses, delegate invariants to Domain, return `Result` for e
 - `Outbox/`: `OutboxMessage`, `OutboxSerializer`, `OutboxOptions`, `OutboxDispatcher`.
 - `Configuration/ServiceExtensions.AddInfrastructure(configuration)`.
 
-Repository rules (eShop style): `GetAsync` returns a tracked entity, so changes and events are seen by `SaveEntitiesAsync`. List queries (`GetAllAsync`) use `AsNoTracking()`. `Add` and `Delete` are synchronous and only change the tracker. Nothing calls `SaveChanges` except `UnitOfWork.SaveEntitiesAsync` and the outbox dispatcher.
+`GetAsync` returns a tracked entity, so changes and events are seen by `SaveEntitiesAsync`. List queries (`GetAllAsync`) use `AsNoTracking()`. `Add` and `Delete` are synchronous and only change the tracker. Only `UnitOfWork.SaveEntitiesAsync` and the outbox dispatcher call `SaveChanges`.
 
 ## API Layer
 
@@ -211,7 +211,7 @@ var id = command.Id ?? Guid.CreateVersion7();
 
 ## Unit of Work and Domain Events (outbox)
 
-Chosen over Catalog-BE and eShopOnContainers: events are not dispatched in-process before `SaveChanges`. They go through a transactional outbox, like Campus-BE.
+Happymeal saves domain events in the outbox in the same transaction as entity changes. The background dispatcher delivers them after that transaction commits.
 
 `UnitOfWork.SaveEntitiesAsync`:
 
@@ -243,7 +243,7 @@ public sealed class LogRecipeLifecycleDomainEventHandler(ILogger<LogRecipeLifecy
 }
 ```
 
-- Name handlers after the reaction, eShop style: `<Reaction>When<Event>DomainEventHandler` for one event (for example `CreateShoppingListWhenRecipeCreatedDomainEventHandler`), or `<Reaction>DomainEventHandler` when one class reacts the same way to several events.
+- Name handlers after the reaction. Use `<Reaction>When<Event>DomainEventHandler` for one event, for example `CreateShoppingListWhenRecipeCreatedDomainEventHandler`. Use `<Reaction>DomainEventHandler` when one class reacts the same way to several events. See the [domain event handler example in Microsoft's eShop](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation#how-to-handle-domain-events).
 - Put handlers with application logic in `Features/<Feature>/DomainEventHandlers/`. A handler that only talks to an external system belongs in Infrastructure.
 - `AddDomainEventHandlers(assembly)` registers every closed `IDomainEventHandler<>` and records it in `IDomainEventHandlerCatalog`. A class may handle several events.
 - Keep handlers thin. If the reaction is real business work, send a command with `ISender` and return its `Result`.

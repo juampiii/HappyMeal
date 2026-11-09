@@ -40,4 +40,10 @@ Integration tests start a PostgreSQL container, so Docker must be running.
 
 ## Structure
 
-See `.claude/skills/architecture` for the full architecture guide.
+See the [architecture skill](skills/architecture/SKILL.md) for the full architecture guide.
+
+## Agent skills
+
+Start Claude Code or Codex in `Happymeal-BE/` to discover the [backend skills](skills/INDEX.md). Each tool loads a short entry that links to the shared skill.
+
+See [SkillKit maintenance and verification](skills/MAINTENANCE.md) to add or update a skill.
