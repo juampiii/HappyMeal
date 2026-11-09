@@ -1,0 +1,9 @@
+# Happymeal-BE skills
+
+| Skill | When to use it |
+| --- | --- |
+| [architecture](architecture/SKILL.md) | Designing, reviewing or debugging a backend feature, validation, persistence or domain events. |
+| [integration-tests](integration-tests/SKILL.md) | Writing or debugging tests for HTTP, PostgreSQL, EF Core or outbox delivery. |
+| [unit-tests](unit-tests/SKILL.md) | Writing or reviewing isolated tests for domain rules, handlers or pure infrastructure logic. |
+
+Read the selected `SKILL.md` and follow its links to the references that apply to the task. Paths in a skill are relative to its own folder.
