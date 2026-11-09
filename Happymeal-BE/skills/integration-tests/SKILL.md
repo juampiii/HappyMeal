@@ -7,7 +7,7 @@ description: Guide for integration testing in Happymeal-BE with WebApplicationFa
 
 Tests boot the real API in memory with `WebApplicationFactory<Program>` against a **real PostgreSQL** started by Testcontainers. Respawn resets the database before each test. The outbox dispatcher runs as in production.
 
-Chosen over Campus-BE: there is no Aspire test host. Chosen over Catalog-BE: xUnit v3 + AwesomeAssertions instead of xUnit v2 + FluentAssertions 7, and plain `HttpClient` instead of a Refit contracts client.
+Use xUnit v3 with AwesomeAssertions. Send requests with the `HttpClient` created by the test factory.
 
 ## When to write an integration test
 

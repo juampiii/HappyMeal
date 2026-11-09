@@ -7,7 +7,7 @@ description: Explains the Happymeal-BE architecture - Clean Architecture layers,
 
 Use this skill for a project-wide view before you implement, review, debug or explain Happymeal-BE. The mental model is simple: the API receives requests and sends commands and queries, Application handles them, Domain owns business rules, and Infrastructure supplies persistence and background delivery of domain events.
 
-The structure merges two reference codebases (Campus-BE and Catalog-BE). Application use cases group a nested `Command` or `Query` and `Handler` in a public static `<UseCase>Feature` class and matching file, for example `CreateRecipeFeature.Command` and `CreateRecipeFeature.Handler`. Existing Commands/Queries folders and namespaces stay in place; the Feature suffix prevents namespace collisions. Domain events and async methods retain the eShopOnContainers-inspired naming: `RecipeCreatedDomainEvent`, `IDomainEventHandler<T>`, `SaveEntitiesAsync`, `Async` suffix. MediatR is not used; the contracts are in-house. Where the reference codebases differed, the reference files say which option Happymeal chose. Do not reintroduce the other one.
+Application use cases group a nested `Command` or `Query` and `Handler` in a public static `<UseCase>Feature` class and matching file, for example `CreateRecipeFeature.Command` and `CreateRecipeFeature.Handler`. Keep the Commands/Queries folders and namespaces. The `Feature` suffix prevents namespace collisions. Happymeal defines its own messaging contracts and follows the domain event naming used in Microsoft's eShop, such as `RecipeCreatedDomainEvent`.
 
 ## Available Files
 
@@ -38,5 +38,5 @@ The structure merges two reference codebases (Campus-BE and Catalog-BE). Applica
 - Use `IUnitOfWork` repositories for tracked persistence and call `SaveEntitiesAsync` once per command.
 - Domain events go through the transactional outbox. Handlers run later, out of band, at least once. Make them idempotent.
 - Async methods end in `Async` (Microsoft convention), including our own (`HandleAsync`, `GetAsync`, `SaveEntitiesAsync`). Controller actions too.
-- No MediatR, MassTransit, Aspire, DYPlatform or DYCommon packages. Ask before adding a third-party package, and never add one with a commercial license (for example FluentAssertions 8+, MediatR 13+, MassTransit 9+).
+- Do not add MediatR, MassTransit, or Aspire. Ask before adding a third-party package. Do not add packages with a commercial license such as FluentAssertions 8+.
 - Do not invent architecture for the current task. Extend the existing slices, contracts and registration patterns first.

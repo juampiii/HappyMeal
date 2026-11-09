@@ -2,7 +2,7 @@
 
 Happymeal-BE uses the standard ASP.NET Core error contract. Every error is an RFC 9457 `ProblemDetails` body. Validation errors are a `400` `ValidationProblemDetails` with plain text messages.
 
-Chosen over Campus-BE: there is no `422`, no `ValidationKeys` error keys and no `MappingSchema`/`PathMap`. Chosen over Catalog-BE: there is no global `ValidationActionFilter`. Chosen over eShopOnContainers: there is no validation pipeline behavior. Validation runs in Domain and reaches HTTP through an `Error` of type `Validation`.
+Domain factories and mutators validate inputs and return failures as an `Error` of type `Validation`. The API maps that error to the HTTP response.
 
 ## Request Flow
 

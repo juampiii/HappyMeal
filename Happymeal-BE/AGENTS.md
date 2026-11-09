@@ -21,7 +21,7 @@ Integration tests need Docker and are slow. Run them only after asking.
 
 ## Hard rules
 
-- No Aspire, no DYPlatform or DYCommon packages, no MediatR, no MassTransit, no packages with a commercial license (this includes FluentAssertions 8+). Shared building blocks go in `src/Happymeal.Common`.
+- Do not add Aspire, MediatR, MassTransit, or packages with a commercial license such as FluentAssertions 8+. Shared building blocks go in `src/Happymeal.Common`.
 - Ask before adding any production package. Domain has no third-party packages: params implement `IValidatable` and rules are written by hand. No FluentValidation.
 - Handlers return `Result`/`Result<T>` with an `Error`. Errors are ProblemDetails. Validation errors are `400 ValidationProblemDetails`.
 - Domain events go through the outbox. Handlers must be idempotent.
