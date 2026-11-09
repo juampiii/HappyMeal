@@ -67,7 +67,7 @@ public sealed class RecipesController(ISender sender) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(new DeleteRecipeCommand(id), cancellationToken);
+        var result = await sender.SendAsync(new DeleteRecipeFeature.Command(id), cancellationToken);
         return this.ToActionResult(result);
     }
 }

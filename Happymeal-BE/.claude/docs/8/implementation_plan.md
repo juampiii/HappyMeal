@@ -67,9 +67,9 @@ Commit: `refactor: group update recipe`
 
 Commit: `refactor: group delete recipe`
 
-- [ ] 8. Combine `DeleteRecipeCommand.cs` and `DeleteRecipeCommandHandler.cs` into `Commands/DeleteRecipe/DeleteRecipeFeature.cs`, with `Command` and `Handler`. Remove the old files.
-- [ ] 9. Preserve the response-free `ICommand` and `ICommandHandler<Command>` contracts. Update `RecipesController.DeleteAsync` and `DeleteRecipeCommandHandlerTests` to use the new types.
-- [ ] 10. Build the solution and run `DeleteRecipeCommandHandlerTests`. Preserve deletion, event emission and persistence failure behavior. Commit this slice and plan progress.
+- [x] 8. Combine `DeleteRecipeCommand.cs` and `DeleteRecipeCommandHandler.cs` into `Commands/DeleteRecipe/DeleteRecipeFeature.cs`, with `Command` and `Handler`. Remove the old files.
+- [x] 9. Preserve the response-free `ICommand` and `ICommandHandler<Command>` contracts. Update `RecipesController.DeleteAsync` and `DeleteRecipeCommandHandlerTests` to use the new types.
+- [x] 10. Build the solution and run `DeleteRecipeCommandHandlerTests`. Preserve deletion, event emission and persistence failure behavior. Commit this slice and plan progress.
 
 ### Phase 4: Get recipe by id
 
@@ -111,6 +111,7 @@ Commit: `refactor: group list recipes`
 
 ### Execution results
 
-- Migration status: CreateRecipe and UpdateRecipe complete; DeleteRecipe, GetRecipeById and GetRecipes pending.
+- Migration status: CreateRecipe, UpdateRecipe and DeleteRecipe complete; GetRecipeById and GetRecipes pending.
 - CreateRecipe: solution build passed with 0 warnings/errors; all 5 handler tests passed. Removed the obsolete duplicate container.
 - UpdateRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.
+- DeleteRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.

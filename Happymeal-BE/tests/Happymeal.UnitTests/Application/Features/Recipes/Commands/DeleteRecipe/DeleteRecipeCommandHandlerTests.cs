@@ -10,12 +10,12 @@ namespace Happymeal.UnitTests.Application.Features.Recipes.Commands.DeleteRecipe
 public class DeleteRecipeCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly DeleteRecipeCommandHandler _sut;
+    private readonly DeleteRecipeFeature.Handler _sut;
 
     public DeleteRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new DeleteRecipeCommandHandler(_unitOfWork);
+        _sut = new DeleteRecipeFeature.Handler(_unitOfWork);
     }
 
     private static Recipe CreateRecipe()
@@ -34,7 +34,7 @@ public class DeleteRecipeCommandHandlerTests
         _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeCommand(recipe.Id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(recipe.Id), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -51,7 +51,7 @@ public class DeleteRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(id, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeCommand(id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(id), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -69,7 +69,7 @@ public class DeleteRecipeCommandHandlerTests
         _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(false);
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeCommand(recipe.Id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(recipe.Id), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
