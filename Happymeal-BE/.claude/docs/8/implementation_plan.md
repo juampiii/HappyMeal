@@ -75,9 +75,9 @@ Commit: `refactor: group delete recipe`
 
 Commit: `refactor: group get recipe`
 
-- [ ] 11. Combine `GetRecipeByIdQuery.cs` and `GetRecipeByIdQueryHandler.cs` into `Queries/GetRecipeById/GetRecipeByIdFeature.cs`, with `Query` and `Handler`. Remove the old files.
-- [ ] 12. Update `RecipesController.GetByIdAsync` and `GetRecipeByIdQueryHandlerTests` to use `GetRecipeByIdFeature.Query` and `.Handler`.
-- [ ] 13. Build the solution and run `GetRecipeByIdQueryHandlerTests` (success and not found). Commit this slice and plan progress.
+- [x] 11. Combine `GetRecipeByIdQuery.cs` and `GetRecipeByIdQueryHandler.cs` into `Queries/GetRecipeById/GetRecipeByIdFeature.cs`, with `Query` and `Handler`. Remove the old files.
+- [x] 12. Update `RecipesController.GetByIdAsync` and `GetRecipeByIdQueryHandlerTests` to use `GetRecipeByIdFeature.Query` and `.Handler`.
+- [x] 13. Build the solution and run `GetRecipeByIdQueryHandlerTests` (success and not found). Commit this slice and plan progress.
 
 ### Phase 5: List recipes
 
@@ -111,7 +111,8 @@ Commit: `refactor: group list recipes`
 
 ### Execution results
 
-- Migration status: CreateRecipe, UpdateRecipe and DeleteRecipe complete; GetRecipeById and GetRecipes pending.
+- Migration status: CreateRecipe, UpdateRecipe, DeleteRecipe and GetRecipeById complete; GetRecipes pending.
 - CreateRecipe: solution build passed with 0 warnings/errors; all 5 handler tests passed. Removed the obsolete duplicate container.
 - UpdateRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.
 - DeleteRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.
+- GetRecipeById: solution build passed with 0 warnings/errors; both handler tests passed.

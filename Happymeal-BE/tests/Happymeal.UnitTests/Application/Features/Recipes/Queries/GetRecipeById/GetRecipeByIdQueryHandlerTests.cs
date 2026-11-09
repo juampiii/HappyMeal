@@ -9,12 +9,12 @@ namespace Happymeal.UnitTests.Application.Features.Recipes.Queries.GetRecipeById
 public class GetRecipeByIdQueryHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly GetRecipeByIdQueryHandler _sut;
+    private readonly GetRecipeByIdFeature.Handler _sut;
 
     public GetRecipeByIdQueryHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new GetRecipeByIdQueryHandler(_unitOfWork);
+        _sut = new GetRecipeByIdFeature.Handler(_unitOfWork);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class GetRecipeByIdQueryHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(recipe.Id, Arg.Any<CancellationToken>()).Returns(recipe);
 
         // Act
-        var result = await _sut.HandleAsync(new GetRecipeByIdQuery(recipe.Id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new GetRecipeByIdFeature.Query(recipe.Id), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -43,7 +43,7 @@ public class GetRecipeByIdQueryHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(id, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         // Act
-        var result = await _sut.HandleAsync(new GetRecipeByIdQuery(id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new GetRecipeByIdFeature.Query(id), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();

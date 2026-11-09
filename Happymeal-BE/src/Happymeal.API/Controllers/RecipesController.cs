@@ -29,7 +29,7 @@ public sealed class RecipesController(ISender sender) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(new GetRecipeByIdQuery(id), cancellationToken);
+        var result = await sender.SendAsync(new GetRecipeByIdFeature.Query(id), cancellationToken);
         return this.ToActionResult(result);
     }
 
