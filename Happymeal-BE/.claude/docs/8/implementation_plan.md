@@ -13,7 +13,7 @@ Success criteria:
 - Existing HTTP contracts, business behavior, persistence and domain events remain unchanged.
 - No new packages or project configuration changes.
 
-## Current state
+## Initial state
 
 - Recipes is the only feature area currently implemented.
 - Five request/handler pairs exist: `CreateRecipe`, `UpdateRecipe`, `DeleteRecipe`, `GetRecipeById` and `GetRecipes`.
@@ -83,17 +83,17 @@ Commit: `refactor: group get recipe`
 
 Commit: `refactor: group list recipes`
 
-- [ ] 14. Combine `GetRecipesQuery.cs` and `GetRecipesQueryHandler.cs` into `Queries/GetRecipes/GetRecipesFeature.cs`, with `Query` and `Handler`. Remove the old files.
-- [ ] 15. Preserve `IQuery<IReadOnlyList<RecipeDto>>`. Update `RecipesController.GetAllAsync` and `GetRecipesQueryHandlerTests` to use `GetRecipesFeature.Query` and `.Handler`.
-- [ ] 16. Build the solution and run `GetRecipesQueryHandlerTests` (populated and empty list). Complete the final verification below before committing this slice and plan progress.
+- [x] 14. Combine `GetRecipesQuery.cs` and `GetRecipesQueryHandler.cs` into `Queries/GetRecipes/GetRecipesFeature.cs`, with `Query` and `Handler`. Remove the old files.
+- [x] 15. Preserve `IQuery<IReadOnlyList<RecipeDto>>`. Update `RecipesController.GetAllAsync` and `GetRecipesQueryHandlerTests` to use `GetRecipesFeature.Query` and `.Handler`.
+- [x] 16. Build the solution and run `GetRecipesQueryHandlerTests` (populated and empty list). Complete the final verification below before committing this slice and plan progress.
 
 ### Phase 6: Final verification
 
-- [ ] 17. Run `dotnet build Happymeal.slnx` and `dotnet test --project tests/Happymeal.UnitTests`.
-- [ ] 18. Search source and tests for old request/handler type references and aliases. Test class names are intentional exceptions. Confirm one request and one handler per use case, with no obsolete files.
-- [ ] 19. Check that architectural guidance consistently documents the final naming convention, with no remaining pending migrations.
+- [x] 17. Run `dotnet build Happymeal.slnx` and `dotnet test --project tests/Happymeal.UnitTests`.
+- [x] 18. Search source and tests for old request/handler type references and aliases. Test class names are intentional exceptions. Confirm one request and one handler per use case, with no obsolete files.
+- [x] 19. Check that architectural guidance consistently documents the final naming convention, with no remaining pending migrations.
 - [ ] 20. Run the existing integration tests with Docker once authorized, following the repository instructions. These exercise nested handler resolution through the real sender, all five endpoints and outbox delivery. Record results or pending authorization here.
-- [ ] 21. Run `git diff --check`, review the staged files for the final slice and create its commit. Do not include unrelated working-tree changes.
+- [x] 21. Run `git diff --check`, review the staged files for the final slice and create its commit. Do not include unrelated working-tree changes.
 
 ## Commit workflow
 
@@ -105,14 +105,18 @@ Commit: `refactor: group list recipes`
 
 ## Notes and deviations
 
-- This document is the implementation plan only. No additional use cases have been migrated or committed while writing it.
-- The creation refactor is pending in the working tree and must be reviewed as Phase 1 rather than assumed complete.
-- Record validation results and deviations here as implementation progresses.
+- All five use cases have been migrated sequentially, with one implementation commit per use case.
+- Existing test class/file names were preserved as planned.
+- Integration verification remains pending because Docker is unavailable in this environment; see the execution results below.
 
 ### Execution results
 
-- Migration status: CreateRecipe, UpdateRecipe, DeleteRecipe and GetRecipeById complete; GetRecipes pending.
+- Migration status: all five use cases complete; no pending code migrations.
 - CreateRecipe: solution build passed with 0 warnings/errors; all 5 handler tests passed. Removed the obsolete duplicate container.
 - UpdateRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.
 - DeleteRecipe: solution build passed with 0 warnings/errors; all 3 handler tests passed.
 - GetRecipeById: solution build passed with 0 warnings/errors; both handler tests passed.
+- GetRecipes: both handler tests passed as part of the full unit suite (40/40 passing).
+- Final solution build: 0 warnings and 0 errors. No obsolete request/handler references or aliases remain in source/tests. Handler implementations were compared with the pre-refactor version and match after normalizing names, nesting and whitespace.
+- Integration command attempted with the user's authorization to proceed with the plan: `dotnet test --project tests/Happymeal.IntegrationTests --no-restore`. All 19 tests failed during fixture setup with `DockerUnavailableException`: unable to connect to `npipe://./pipe/docker_engine`. No endpoint or outbox assertions ran. Step 20 remains pending until Docker is available.
+- Final diff whitespace check passed. Changes are limited to the five use cases, their controller/test references, architecture naming guidance and this plan.

@@ -8,12 +8,12 @@ namespace Happymeal.UnitTests.Application.Features.Recipes.Queries.GetRecipes;
 public class GetRecipesQueryHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly GetRecipesQueryHandler _sut;
+    private readonly GetRecipesFeature.Handler _sut;
 
     public GetRecipesQueryHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new GetRecipesQueryHandler(_unitOfWork);
+        _sut = new GetRecipesFeature.Handler(_unitOfWork);
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class GetRecipesQueryHandlerTests
             .Returns(new List<Recipe> { burger, salad });
 
         // Act
-        var result = await _sut.HandleAsync(new GetRecipesQuery(), CancellationToken.None);
+        var result = await _sut.HandleAsync(new GetRecipesFeature.Query(), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -41,7 +41,7 @@ public class GetRecipesQueryHandlerTests
         _unitOfWork.RecipeRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(new List<Recipe>());
 
         // Act
-        var result = await _sut.HandleAsync(new GetRecipesQuery(), CancellationToken.None);
+        var result = await _sut.HandleAsync(new GetRecipesFeature.Query(), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();

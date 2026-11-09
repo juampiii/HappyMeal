@@ -19,7 +19,7 @@ public sealed class RecipesController(ISender sender) : ControllerBase
     [ProducesResponseType<IReadOnlyList<RecipeDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(new GetRecipesQuery(), cancellationToken);
+        var result = await sender.SendAsync(new GetRecipesFeature.Query(), cancellationToken);
         return this.ToActionResult(result);
     }
 
