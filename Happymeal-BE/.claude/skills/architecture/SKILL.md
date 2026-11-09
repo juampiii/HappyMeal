@@ -1,13 +1,13 @@
 ---
 name: architecture
-description: Explains the Happymeal-BE architecture - Clean Architecture layers, CQRS-style commands and queries with their handlers and ISender (Microsoft eShopOnContainers naming, without MediatR), the unified Result/Error type, domain validation with IValidatable (no FluentValidation), the transactional outbox for domain events and IDomainEventHandler, the ProblemDetails error contract, and AggregateRoot and IAuditable audit fields, client-assignable ids, and runtime setup (EF Core PostgreSQL, docker-compose, OpenAPI + Scalar). Use when onboarding, designing or reviewing a feature, deciding which layer code belongs in, adding a command, query, domain event or domain event handler, adding validation, or changing persistence and startup.
+description: Explains the Happymeal-BE architecture - Clean Architecture layers, CQRS-style commands and queries with their handlers and ISender (nested requests and handlers grouped by use case, without MediatR), the unified Result/Error type, domain validation with IValidatable (no FluentValidation), the transactional outbox for domain events and IDomainEventHandler, the ProblemDetails error contract, and AggregateRoot and IAuditable audit fields, client-assignable ids, and runtime setup (EF Core PostgreSQL, docker-compose, OpenAPI + Scalar). Use when onboarding, designing or reviewing a feature, deciding which layer code belongs in, adding a command, query, domain event or domain event handler, adding validation, or changing persistence and startup.
 ---
 
 # Happymeal-BE Architecture
 
 Use this skill for a project-wide view before you implement, review, debug or explain Happymeal-BE. The mental model is simple: the API receives requests and sends commands and queries, Application handles them, Domain owns business rules, and Infrastructure supplies persistence and background delivery of domain events.
 
-The structure merges two reference codebases (Campus-BE and Catalog-BE). The naming follows Microsoft's *.NET Microservices: Architecture for Containerized .NET Applications* guide (eShopOnContainers): `CreateRecipeCommand` + `CreateRecipeCommandHandler`, `RecipeCreatedDomainEvent`, `IDomainEventHandler<T>`, `SaveEntitiesAsync`, `Async` suffix. MediatR is not used; the contracts are in-house. Where the reference codebases differed, the reference files say which option Happymeal chose. Do not reintroduce the other one.
+The structure merges two reference codebases (Campus-BE and Catalog-BE). Application use cases group a nested `Command` or `Query` and `Handler` in a public static `<UseCase>Feature` class and matching file, for example `CreateRecipeFeature.Command` and `CreateRecipeFeature.Handler`. Existing Commands/Queries folders and namespaces stay in place; the Feature suffix prevents namespace collisions. Domain events and async methods retain the eShopOnContainers-inspired naming: `RecipeCreatedDomainEvent`, `IDomainEventHandler<T>`, `SaveEntitiesAsync`, `Async` suffix. MediatR is not used; the contracts are in-house. Where the reference codebases differed, the reference files say which option Happymeal chose. Do not reintroduce the other one.
 
 ## Available Files
 
@@ -31,7 +31,7 @@ The structure merges two reference codebases (Campus-BE and Catalog-BE). The nam
 ## Core Rules
 
 - Respect inward dependencies: Domain only knows `Happymeal.Common`. Application defines commands, queries, handlers and abstractions. Infrastructure implements them. API composes and exposes HTTP.
-- Use vertical slices under `Happymeal.Application/Features/<Feature>/{Commands,Queries,DomainEventHandlers}`.
+- Use vertical slices under `Happymeal.Application/Features/<Feature>/{Commands,Queries,DomainEventHandlers}`. For command/query naming and file layout, follow [`feature-workflow.md`](references/feature-workflow.md). This groups Application use cases; the existing Clean Architecture layer boundaries still apply.
 - Keep controllers thin. Build the command or query, call `ISender.SendAsync`, and return `this.ToActionResult(result)`.
 - Keep business invariants in Domain. Params records implement `IValidatable`; factories and mutators call `Validate()` before changing state and return `Result`/`Result<T>`, not exceptions, for expected failures. Domain has no third-party packages.
 - Handlers return `Result` or `Result<T>` with an `Error` for expected failures. Do not throw for business outcomes.

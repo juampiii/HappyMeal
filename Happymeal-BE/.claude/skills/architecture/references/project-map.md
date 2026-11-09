@@ -72,4 +72,4 @@ All packages are free for commercial use. Do not add MediatR, MassTransit, Fluen
 
 ## Architectural Character
 
-This is a CQRS-style application with the naming of Microsoft's eShopOnContainers reference, but without MediatR: commands, queries, handlers and `ISender` are in-house contracts, organized in vertical slices. Domain events are delivered by an in-house transactional outbox and the `Happymeal.Common` dispatcher. For the mechanics, read [`layers-and-flows.md`](layers-and-flows.md).
+This is a CQRS-style application without MediatR: commands, queries, handlers and `ISender` are in-house contracts. Each Application use case groups its nested `Command` or `Query` and `Handler` in a public static `<UseCase>Feature` class in a matching file. Existing Commands/Queries folders and namespaces remain; the Feature suffix prevents namespace collisions. Domain events are delivered by an in-house transactional outbox and the `Happymeal.Common` dispatcher. For the mechanics, read [`layers-and-flows.md`](layers-and-flows.md).

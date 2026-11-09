@@ -5,9 +5,21 @@ Use this workflow to add or change a feature. Keep the change inside its vertica
 ## 1. Define Contracts First
 
 - Request DTO in `Happymeal.API/Dtos` if the HTTP body changes.
-- Command (`ICommand` or `ICommand<TResponse>`) or query (`IQuery<TResponse>`) record in `Features/<Feature>/{Commands,Queries}/<Name>/`.
+- Nested `Command` (`ICommand` or `ICommand<TResponse>`) or `Query` (`IQuery<TResponse>`) record in a public static `<Name>Feature` class in `Features/<Feature>/{Commands,Queries}/<Name>/<Name>Feature.cs`.
 - Response DTO at the feature root, with a static `From(entity)` mapper.
 - Repository interface methods in `Common/Interfaces` for any new persistence need.
+
+Example layout:
+
+```text
+Features/Recipes/
+  Commands/CreateRecipe/CreateRecipeFeature.cs   # Command + Handler
+  Queries/GetRecipeById/GetRecipeByIdFeature.cs  # Query + Handler
+  RecipeDto.cs                                 # shared response DTO
+  DomainEventHandlers/LogRecipeLifecycleDomainEventHandler.cs
+```
+
+The folder and namespace name is `CreateRecipe`; the container and file name is `CreateRecipeFeature`. Use the same convention for new use cases. Domain event handlers remain separate because they react to events rather than handling a command/query request.
 
 Do not write Infrastructure before the Application contract is clear.
 
@@ -26,7 +38,7 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 
 ## 4. Build the Application Slice
 
-1. Add the handler next to its request: `public sealed class <Name>CommandHandler(...) : ICommandHandler<TCommand, TResponse>` (or `<Name>QueryHandler : IQueryHandler<TQuery, TResponse>`). The scanner registers it.
+1. Nest a `public sealed class Handler(...)` alongside `Command` or `Query` inside `<Name>Feature`. Implement `ICommandHandler<Command>`, `ICommandHandler<Command, TResponse>` or `IQueryHandler<Query, TResponse>` as appropriate. The assembly scanner includes nested handlers. Call sites use `<Name>Feature.Command` or `<Name>Feature.Query`, avoiding namespace aliases.
 2. Use guard clauses: not found -> `return Error.NotFound(...)`, conflict -> `return Error.Conflict(...)`.
 3. Call the Domain method. On failure pass the error through: `return result.Error!;`.
 4. Persist through `IUnitOfWork` repositories and call `SaveEntitiesAsync` once (commands only).
@@ -43,7 +55,7 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 ## 6. Expose Through the API
 
 - Add the action to the feature controller in `Controllers/`. Name it `<Verb>Async`.
-- Build the command or query from route and body and call `sender.SendAsync(...)`.
+- Build `<Name>Feature.Command` or `<Name>Feature.Query` from route and body and call `sender.SendAsync(...)`, for example `sender.SendAsync(new GetRecipeByIdFeature.Query(id), cancellationToken)`.
 - Return `this.ToActionResult(result)`. Use the `onSuccess` overload for `201 Created` and give the target action `[ActionName(nameof(...))]`.
 - Add `[ProducesResponseType<T>]` for the success type and `ProblemDetails`/`ValidationProblemDetails` for the errors.
 

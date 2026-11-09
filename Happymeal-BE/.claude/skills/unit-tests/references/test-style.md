@@ -19,12 +19,12 @@ No shared base class. Keep collaborators and the system under test in private re
 public class UpdateRecipeCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly UpdateRecipeCommandHandler _sut;
+    private readonly UpdateRecipeFeature.Handler _sut;
 
     public UpdateRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new UpdateRecipeCommandHandler(_unitOfWork);
+        _sut = new UpdateRecipeFeature.Handler(_unitOfWork);
     }
 }
 ```
