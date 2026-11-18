@@ -14,6 +14,21 @@ COPY .editorconfig ./
 COPY src/ src/
 RUN dotnet publish src/Happymeal.API/Happymeal.API.csproj -c Release -o /app/publish --no-restore
 
+FROM build AS migrations-build
+COPY .config/ .config/
+RUN dotnet tool restore
+RUN dotnet ef migrations bundle \
+    --project src/Happymeal.Infrastructure \
+    --startup-project src/Happymeal.Infrastructure \
+    --self-contained -r linux-x64 \
+    -o /app/efbundle
+
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS migrate
+WORKDIR /app
+COPY --from=migrations-build /app/efbundle .
+USER $APP_UID
+ENTRYPOINT ["./efbundle"]
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .

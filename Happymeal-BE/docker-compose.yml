@@ -18,6 +18,17 @@ services:
       retries: 10
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: .
+      target: migrate
+    image: happymeal-migrate:${HAPPYMEAL_TAG}
+    command: ["--connection", "Host=postgres;Port=5432;Database=happymeal;Username=happymeal;Password=${POSTGRES_PASSWORD}"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
   api:
     image: happymeal-api:${HAPPYMEAL_TAG}
     environment:
@@ -27,6 +38,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
