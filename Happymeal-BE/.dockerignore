@@ -1,0 +1,28 @@
+# Build output
+**/bin
+**/obj
+**/TestResults
+
+# IDE
+**/.idea
+**/.vs
+
+# Secrets
+**/.env*
+
+# Tests and documentation
+**/tests
+**/docs
+**/README.md
+
+# AI tooling
+**/.agents
+**/.claude
+**/skills
+**/AGENTS.md
+**/CLAUDE.md
+
+# Repository and Docker files
+**/.gitignore
+**/.dockerignore
+**/docker-compose.yml

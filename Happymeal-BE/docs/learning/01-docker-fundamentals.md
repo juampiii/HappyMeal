@@ -192,6 +192,11 @@ Run these steps from the `Happymeal-BE` folder. Each one confirms a concept from
    ```bash
    docker compose exec postgres psql -U happymeal -d happymeal -c 'SELECT count(*) FROM "Happymeal"."Recipes";'
    ```
+   > **PowerShell:** it removes the double quotes before passing the argument to `docker`. Postgres then receives `Happymeal.Recipes`, lowercases it, and fails with `relation "happymeal.recipes" does not exist`. Escape the quotes with a backslash, or send the query through stdin:
+   > ```powershell
+   > docker compose exec postgres psql -U happymeal -d happymeal -c 'SELECT count(*) FROM \"Happymeal\".\"Recipes\";'
+   > 'SELECT count(*) FROM "Happymeal"."Recipes";' | docker compose exec -T postgres psql -U happymeal -d happymeal
+   > ```
 4. Create a recipe from the Scalar UI, and run the query again.
 5. `docker compose down`, then `docker compose up -d`. Run the query. The recipe is still there, because the volume survived.
 6. `docker compose down -v`, then `docker compose up -d`. Start the API again. The table is back, but empty.
