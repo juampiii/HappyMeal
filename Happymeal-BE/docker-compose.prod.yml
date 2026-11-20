@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: happymeal-postgres
+    environment:
+      POSTGRES_DB: happymeal
+      POSTGRES_USER: happymeal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - happymeal-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U happymeal -d happymeal"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    image: happymeal-migrate:${HAPPYMEAL_TAG}
+    command: ["--connection", "Host=postgres;Port=5432;Database=happymeal;Username=happymeal;Password=${POSTGRES_PASSWORD}"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    image: happymeal-api:${HAPPYMEAL_TAG}
+    environment:
+      ConnectionStrings__Happymeal: "Host=postgres;Port=5432;Database=happymeal;Username=happymeal;Password=${POSTGRES_PASSWORD}"
+    ports:
+      - "8091:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  happymeal-postgres-data:

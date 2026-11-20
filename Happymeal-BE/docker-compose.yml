@@ -30,6 +30,9 @@ services:
     restart: 'no'
 
   api:
+    build:
+      context: .
+      target: final
     image: happymeal-api:${HAPPYMEAL_TAG}
     environment:
       ConnectionStrings__Happymeal: "Host=postgres;Port=5432;Database=happymeal;Username=happymeal;Password=${POSTGRES_PASSWORD}"
