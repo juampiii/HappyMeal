@@ -19,11 +19,14 @@ There is no Aspire, no ServiceDefaults and no MigrationService. Logging is the d
 
 ## Local Development
 
-1. `docker compose up -d` starts PostgreSQL 18 on `localhost:5432` (container `happymeal-postgres`, database `happymeal`, named volume `happymeal-postgres-data`).
-2. `dotnet run --project src/Happymeal.API` starts the API. In Development it applies pending migrations at startup.
-3. Scalar UI: `/scalar/v1`. OpenAPI document: `/openapi/v1.json`. Health: `/health` (includes a DbContext check).
+1. Copy `.env.example` to `.env` and set `POSTGRES_PASSWORD` and `HAPPYMEAL_TAG`.
+2. `docker compose up -d --build` starts PostgreSQL 18, runs the one-shot `migrate` service, then starts the API at `http://localhost:8080`. PostgreSQL is also published on `localhost:5432` (container `happymeal-postgres`, database `happymeal`, named volume `happymeal-postgres-data`).
+3. To use the local SDK instead, start only `docker compose up -d postgres`, set `ConnectionStrings__Happymeal` for `Host=localhost` with the password from `.env`, and run `dotnet run --project src/Happymeal.API`. The .NET process does not load `.env`. In Development it applies pending migrations at startup.
+4. Scalar UI: `/scalar/v1`. OpenAPI document: `/openapi/v1.json`. Both are Development-only. Health: `/health` (includes a DbContext check). The container uses Production by default; check `/health` and `/api/recipes` there.
 
-The PostgreSQL user and password in `docker-compose.yml` and `appsettings.Development.json` is a local development value only. `appsettings.json` keeps the connection string empty. Other environments must provide `ConnectionStrings__Happymeal`. Startup fails fast when it is missing.
+Compose reads the database password from `.env`; the password in `appsettings.Development.json` is only a local fallback and may differ. `appsettings.json` keeps the connection string empty. Other environments must provide `ConnectionStrings__Happymeal`. Startup fails fast when it is missing.
+
+`docker-compose.prod.yml` is a standalone deployment file, used with `docker compose -f docker-compose.prod.yml ...`. It loads prebuilt API and migration images with the same `HAPPYMEAL_TAG`, publishes only the API on port 8091, and keeps PostgreSQL internal. The [deployment guide](../../../docs/learning/02-docker-compose-build-and-deploy.md) covers building, transferring both images, verifying and rolling back.
 
 ## Database and Migrations
 
@@ -49,7 +52,7 @@ dotnet ef migrations add <Name> --project src/Happymeal.Infrastructure --startup
 
 `DesignTimeHappymealDbContext` supplies the design-time context, so the API is not needed as startup project.
 
-- Outside Development nothing migrates automatically. Apply migrations from the pipeline (for example an idempotent script with `dotnet ef migrations script --idempotent`). Change this deliberately if the strategy changes.
+- Outside Development the API does not migrate at startup. Both Compose files run a separate `migrate` service from `happymeal-migrate:<tag>`. The Dockerfile bundles EF migrations into a self-contained `linux-x64` executable. Compose waits for healthy PostgreSQL, runs the bundle with `--connection`, then starts the API only after `migrate` exits successfully (`service_completed_successfully`). A failed migration blocks API startup. EF tracks applied migrations, so rerunning the same bundle skips them. Build and transfer the migration image with every API release, using the same tag.
 
 ## Outbox Dispatcher
 
