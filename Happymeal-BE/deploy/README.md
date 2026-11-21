@@ -1,0 +1,236 @@
+# Despliegue de HappyMeal en el homelab de pruebas
+
+El objetivo es que una PR fusionada en `develop` actualice automáticamente el
+entorno `testing` del homelab. Se admite una interrupción breve de la API.
+Guardar estos archivos en el repositorio no los instala ni activa el despliegue.
+
+## Qué hace cada pieza
+
+| Pieza | Dónde se usa | Para qué sirve |
+|---|---|---|
+| [Workflow de Actions](../../.github/workflows/testing.yml) | GitHub | Prueba las PR y, tras el merge, publica imágenes y solicita el despliegue. |
+| `publish-images.sh` | GitHub Actions | Publica API y migraciones en GHCR, sin sobrescribir las etiquetas de commit existentes. |
+| `happymeal-deploy` y `compose.testing.yml` | Homelab | Descargan imágenes, guardan una copia, aplican migraciones y actualizan la API. |
+| `happymeal-ssh-dispatch` y `happymeal-deploy.sudoers` | Homelab | Limitan la clave de Actions a una orden de despliegue concreta. |
+| `install.sh` | Sesión de administrador del homelab | Instala la configuración una vez y permite actualizarla tras revisarla. |
+| `test-deploy.sh` y `test-install.sh` | Contenedores desechables | Comprueban fallos del despliegue y la instalación de permisos. |
+
+El servidor ejecuta una copia de los scripts y del Compose instalada por `root`.
+Actions no puede sustituirlos ni ejecutar un Compose arbitrario como `root`.
+Los cambios de la aplicación solo necesitan imágenes nuevas; los cambios de
+estos scripts o de Compose requieren revisión y reinstalación por un administrador.
+
+Las contraseñas, datos, tres copias y estado del despliegue permanecen en el
+homelab. Duck DNS mantiene actualizado el nombre público del servidor.
+
+## Cómo se identifica y ejecuta un despliegue
+
+La clave restringida admite únicamente esta orden:
+
+```text
+deploy <SHA completo de 40 caracteres> <número de ejecución del workflow>
+```
+
+Antes deben existir estas dos imágenes públicas para `linux/amd64`:
+
+- `ghcr.io/juampiii/happymeal-api:sha-<SHA>`
+- `ghcr.io/juampiii/happymeal-migrate:sha-<SHA>`
+
+Ambas corresponden al mismo commit. El workflow conserva una etiqueta ya
+publicada y, si una publicación quedó a medias, publica solo la imagen que falta.
+Hay que proteger `develop` y los permisos de publicación de GHCR: las imágenes
+son código que el servidor acepta ejecutar.
+
+El servidor procesa un despliegue cada vez y rechaza números de ejecución
+anteriores al último admitido. Hay que usar el contador de un único workflow;
+cambiar de workflow requiere que `root` revise ese estado. Una reejecución de
+Actions conserva su número original y puede reintentar la misma versión.
+
+El orden del despliegue es:
+
+1. Descargar las dos imágenes antes de interrumpir el servicio.
+2. Comprobar el PostgreSQL existente y detener la API, incluido el outbox.
+3. Crear una copia completa de la base de HappyMeal en formato personalizado de
+   PostgreSQL, comprobar el índice del archivo y conservar las últimas tres
+   copias completadas correctamente.
+4. Aplicar las migraciones y arrancar la nueva API.
+5. Exigir una respuesta HTTP satisfactoria en `/health` y `/api/recipes`.
+
+El script no recrea ni actualiza PostgreSQL y no gestiona otros proyectos.
+La preparación inicial de una base vacía es manual.
+
+## 1. Instalar en el servidor
+
+Este paso se hace desde una cuenta de administrador, no desde la clave de Actions.
+Antes de instalar, revisar los archivos y confirmar:
+
+- Proyecto Compose existente: `happymeal`.
+- Contenedor de PostgreSQL: `happymeal-postgres`, saludable, con su volumen actual.
+- Carpeta manual existente: `/home/juampi/happymeal`, con su `.env` del servidor.
+- Usuario `happymeal-deploy` y su clave pública restringida ya creados.
+- Herramientas: Bash, Docker Compose, curl, flock, sudo y GNU find/coreutils.
+
+Conservar el proyecto y el volumen actuales. No usar `down -v`, cambiar el nombre
+del proyecto ni inicializar una base de reemplazo para instalar la automatización.
+
+Desde **PowerShell en el ordenador**, empaquetar y transferir los archivos:
+
+```powershell
+tar -czf "$env:TEMP\happymeal-deploy-setup.tgz" -C C:\Repos\HappyMeal\Happymeal-BE deploy
+scp "$env:TEMP\happymeal-deploy-setup.tgz" juampi@192.168.1.142:/home/juampi/
+```
+
+Desde la **sesión SSH del servidor como root**:
+
+```bash
+install -d -m 700 /root/happymeal-deploy-setup
+tar -xzf /home/juampi/happymeal-deploy-setup.tgz -C /root/happymeal-deploy-setup
+bash /root/happymeal-deploy-setup/deploy/install.sh
+```
+
+El instalador no detiene la API, no ejecuta migraciones y no abre puertos del
+router. Instala los siguientes archivos protegidos:
+
+| Ruta del servidor | Propietario y modo |
+|---|---|
+| `/etc/happymeal/` | `root`, `700` |
+| `/etc/happymeal/compose.testing.yml` | `root`, `600` |
+| `/etc/happymeal/runtime.env` | `root`, `600`; copia del `.env` existente |
+| `/usr/local/sbin/happymeal-deploy` y `happymeal-ssh-dispatch` | `root`, `755` |
+| `/etc/sudoers.d/happymeal-deploy` | `root`, `440` |
+
+El usuario de despliegue no debe poder modificar esos archivos ni sus directorios.
+No necesita pertenecer al grupo Docker. Su entrada de clave pública conserva
+`restrict,command="/usr/local/sbin/happymeal-ssh-dispatch"`. Además, el instalador
+restringe esa cuenta en SSH a autenticación por clave, comando forzado y sin
+reenvíos ni terminal. Valida sudo y la configuración efectiva de SSH antes de
+recargar SSH; la configuración se aplica solo a `happymeal-deploy` y conserva
+el acceso del administrador.
+
+Si falla una comprobación, revisar el error antes de continuar. La instalación
+puede haber copiado algunos archivos antes del fallo. El instalador se puede
+repetir y conserva un `runtime.env` ya instalado. Si cambia la contraseña de la
+aplicación, actualizar ese archivo como administrador. No copiar su contenido
+ni el de una clave privada al chat o al repositorio.
+
+Comprobar la conexión desde **PowerShell**:
+
+```powershell
+ssh -T -o BatchMode=yes -o IdentitiesOnly=yes -i "$env:USERPROFILE\.ssh\happymeal-actions-testing" happymeal-deploy@192.168.1.142
+```
+
+Debe rechazar la conexión sin orden con `Only deploy ... is accepted` y código
+2: el acceso funciona, pero no ofrece una consola. Probar una orden de despliegue
+local con un commit publicado antes de abrir el acceso externo.
+
+## 2. Configurar GitHub y publicar las primeras imágenes
+
+Crear el entorno **testing**, restringido a `develop`, sin aprobación manual por
+despliegue si queremos automatización completa. Proteger `develop` para exigir PR
+y el job `test` del workflow antes del merge.
+
+Dejar la variable de repositorio `HOMELAB_DEPLOY_ENABLED` ausente o en `false`.
+Al fusionar el workflow en `develop`, ejecutará las pruebas y publicará las
+imágenes, pero omitirá el despliegue. También puede lanzarse manualmente desde
+`develop` dejando desmarcada la opción `deploy`.
+
+En GitHub > perfil > Packages, cambiar a **Public** los paquetes `happymeal-api`
+y `happymeal-migrate`. Los paquetes nuevos de GHCR pueden ser privados aunque el
+repositorio sea público. Comprobar su descarga anónima antes de continuar.
+
+## 3. Configurar acceso externo y secretos
+
+Reservar en DHCP la dirección `192.168.1.142` para el homelab. Después de probar
+la clave en la LAN, configurar una redirección **TCP 2222 externo → 22 del
+homelab**. Es el puerto propuesto; si ya se usa, elegir otro. Esta acción hace
+accesible SSH desde Internet y se configura explícitamente en el router.
+No abrir PostgreSQL ni la administración del router.
+
+En el entorno GitHub `testing`, crear:
+
+| Tipo | Nombre | Valor |
+|---|---|---|
+| Variable | `HOMELAB_HOST` | `homepilab-juampi.duckdns.org` |
+| Variable | `HOMELAB_SSH_PORT` | `2222`, o el puerto elegido |
+| Secreto | `HOMELAB_SSH_KEY` | Contenido completo de la clave privada exclusiva |
+| Secreto | `HOMELAB_KNOWN_HOSTS` | Identidad del servidor con el formato siguiente |
+
+El instalador muestra la clave **pública** ED25519 del servidor. Usarla para
+construir una línea como:
+
+```text
+[homepilab-juampi.duckdns.org]:2222 ssh-ed25519 AAAA...clave-publica-real...
+```
+
+No usar `StrictHostKeyChecking=no` ni confiar en un `ssh-keyscan` sin comparar con
+la clave del servidor. La clave privada de Actions está en el ordenador, en
+`C:\Users\jprod\.ssh\happymeal-actions-testing`. Introducirla directamente en el
+secreto de GitHub; no copiarla al repositorio ni al chat.
+
+## 4. Primera prueba y activación
+
+Probar la conexión desde fuera de la LAN: Duck DNS no demuestra por sí solo que
+la redirección del router funcione. Crear la variable de **repositorio**
+`HOMELAB_DEPLOY_ENABLED=true`. Debe ser de repositorio porque el workflow la lee
+antes de entrar en el entorno `testing`.
+
+Lanzar el workflow manualmente desde `develop`, marcando `deploy`. El resultado
+esperado es publicación de las dos imágenes y `Deployment healthy: <commit>`.
+Comprobar los endpoints, el estado y la copia desde el servidor. Desde entonces,
+cada merge a `develop` despliega automáticamente.
+
+Para suspender nuevos despliegues, poner la variable en `false`. No cancelar una
+migración en curso. Las pruebas y publicaciones pueden seguir funcionando.
+
+## Estado, copias y recuperación
+
+| Ruta del servidor | Contenido |
+|---|---|
+| `/var/lib/happymeal-deploy/state/current` | Último commit verificado, imagen anterior y copia previa a migrar. |
+| `/var/lib/happymeal-deploy/state/latest-run` | Última ejecución admitida y SHA, incluidos intentos fallidos. |
+| `/var/lib/happymeal-deploy/state/needs-recovery` | Bloqueo de nuevos despliegues cuando una migración o verificación falla. |
+| `/var/lib/happymeal-deploy/state/migration.log` | Salida de la última migración, legible solo por root y no impresa en CI. |
+| `/var/backups/happymeal/*.dump` | Las últimas tres copias completas verificadas de HappyMeal. |
+
+Antes de empezar a migrar, un fallo intenta arrancar el contenedor anterior si
+estaba en ejecución. Una vez empezadas las migraciones, cualquier fallo requiere
+revisión manual; no se vuelve automáticamente a una imagen ni se restaura la base.
+
+El administrador debe revisar el log de migración, el esquema y los logs de la
+API. Antes de restaurar datos, detener una nueva API que haya quedado arrancada.
+Elegir una imagen anterior compatible o restaurar la copia previa con
+`pg_restore` mediante un procedimiento ensayado. Repetir las dos comprobaciones
+HTTP. Eliminar `needs-recovery` solo cuando se conozca el estado de esquema y
+aplicación y sea seguro reintentar; no borrarlo automáticamente desde CI.
+
+Volver a una imagen anterior no deshace migraciones. El administrador puede hacer
+una recuperación manual deliberada; el script rechaza números de ejecución
+antiguos. Conservar ambas imágenes de cada versión en GHCR.
+
+Las copias se guardan en el mismo servidor: no protegen frente a pérdida de disco
+o del equipo. Comprobar el índice del archivo no demuestra una restauración
+correcta; ensayarla contra una base separada antes de confiar en ella.
+
+## Pruebas y límites de la validación
+
+El workflow ejecuta las pruebas unitarias y de integración antes de publicar
+imágenes. Las de integración crean su propio PostgreSQL temporal.
+
+`test-deploy.sh` simula Docker y HTTP, pero ejecuta los scripts reales y comprueba
+retención, fallos, orden de ejecuciones, publicación y gramática de órdenes SSH.
+No monta el socket de Docker ni se conecta al homelab. Puede ejecutarse desde
+`Happymeal-BE`, con Docker activo:
+
+```powershell
+docker run --rm --entrypoint sh -e HAPPYMEAL_DEPLOY_TEST=1 --mount "type=bind,source=$((Get-Location).Path)/deploy,target=/source,readonly" postgres:18-alpine -c 'apk add --no-cache bash util-linux coreutils findutils >/dev/null && bash /source/test-deploy.sh'
+```
+
+`test-install.sh`, también llamado por el workflow, usa un Debian desechable con
+SSH y sudo reales, y simula Docker y la recarga del servicio. Comprueba permisos,
+rechazo de órdenes arbitrarias y conservación de la configuración al reinstalar.
+Las herramientas de prueba se instalan solo dentro de los contenedores temporales.
+
+Estas comprobaciones no sustituyen la primera ejecución en Actions, las descargas
+reales de GHCR, la instalación en el Debian del homelab, la conexión externa ni una
+restauración ensayada. El despliegue sigue unido a la sesión SSH y al timeout de
+Actions: una interrupción puede requerir recuperación manual.

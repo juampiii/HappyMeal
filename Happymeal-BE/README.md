@@ -39,6 +39,10 @@ In Development the API applies migrations at startup.
 
 ## Deploy to the homelab
 
+For automated deployment from `develop` to `testing` using GitHub Actions and
+GHCR, follow the [setup guide](deploy/README.md). The manual procedure below
+remains available; do not run it concurrently with automated deployment.
+
 Build both images with `./build.ps1` from PowerShell. It appends the Git short SHA to the version in `.env` and sets `$env:HAPPYMEAL_TAG` for that shell. Transfer both `happymeal-api:<tag>` and `happymeal-migrate:<tag>` to the server. Put `docker-compose.prod.yml` and a server-specific `.env` in the deployment folder, with `HAPPYMEAL_TAG` set to that exact tag, then run:
 
 ```bash
