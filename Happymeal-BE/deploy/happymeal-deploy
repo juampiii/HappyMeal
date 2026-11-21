@@ -1,0 +1,91 @@
+#!/bin/bash
+# Installed and owned by root. Never execute a checkout or user-supplied Compose.
+set -euo pipefail
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+umask 077
+[[ $EUID == 0 && $# == 2 && $1 =~ ^[0-9a-f]{40}$ && $2 =~ ^[1-9][0-9]{0,8}$ ]] || {
+  echo 'Usage: happymeal-deploy COMMIT_SHA WORKFLOW_RUN_NUMBER' >&2; exit 2;
+}
+sha=$1
+run=$2
+state=/var/lib/happymeal-deploy/state
+backups=/var/backups/happymeal
+install -d -o root -g root -m 700 "$state" "$backups"
+exec 9>"$state/lock"
+flock -w 600 9 || { echo 'Another deployment is still running' >&2; exit 1; }
+[[ ! -e $state/needs-recovery ]] || {
+  echo 'Previous deployment requires manual recovery; API/schema must be reviewed' >&2; exit 1;
+}
+if [[ -f $state/latest-run ]]; then
+  read -r previous_run previous_sha < "$state/latest-run"
+  if (( run < previous_run )) || { (( run == previous_run )) && [[ $sha != "$previous_sha" ]]; }; then
+    echo 'Rejected stale or conflicting deployment' >&2; exit 1
+  fi
+fi
+
+compose() {
+  env -i PATH="$PATH" HOME=/root HAPPYMEAL_TAG="sha-$sha" \
+    docker compose --project-name happymeal --project-directory /etc/happymeal \
+    --env-file /etc/happymeal/runtime.env -f /etc/happymeal/compose.testing.yml "$@"
+}
+compose config --quiet
+# Persist ordering even if downloads fail. A rerun with the same SHA/run is allowed.
+printf '%s %s\n' "$run" "$sha" > "$state/latest-run.tmp"
+mv "$state/latest-run.tmp" "$state/latest-run"
+compose pull api migrate
+[[ $(docker inspect -f '{{.State.Health.Status}}' happymeal-postgres) == healthy ]] || {
+  echo 'Existing PostgreSQL must be healthy; initial database setup is manual' >&2; exit 1;
+}
+old_api=$(compose ps -a -q api)
+[[ -n $old_api ]] || { echo 'Existing API container required for initial handover' >&2; exit 1; }
+old_running=$(docker inspect -f '{{.State.Running}}' "$old_api")
+old_image=$(docker inspect -f '{{.Config.Image}}' "$old_api")
+stopped=false
+migrating=false
+temporary_backup=''
+on_exit() {
+  code=$?
+  trap - EXIT
+  if [[ -n $temporary_backup ]]; then rm -f -- "$temporary_backup"; fi
+  if (( code != 0 )); then
+    if [[ $stopped == true && $migrating == false && $old_running == true ]]; then
+      docker start "$old_api" >/dev/null || echo 'Could not restart previous API' >&2
+    fi
+    echo "Deployment failed for $sha; inspect the server before retrying" >&2
+  fi
+  exit "$code"
+}
+trap on_exit EXIT
+# Stop the outbox worker as well as HTTP writes before making the recovery snapshot.
+stopped=true
+compose stop -t 60 api
+temporary_backup=$(mktemp "$backups/.pending-XXXXXXXX")
+compose exec -T postgres pg_dump -U happymeal -d happymeal -Fc > "$temporary_backup"
+test -s "$temporary_backup"
+compose exec -T postgres pg_restore --list < "$temporary_backup" >/dev/null
+backup="$backups/$(date -u +%Y%m%dT%H%M%S%N)-$sha.dump"
+mv "$temporary_backup" "$backup"
+temporary_backup=''
+# Only completed, validated dumps participate in retention. All filenames are generated here.
+mapfile -t dumps < <(find "$backups" -maxdepth 1 -type f -name '*.dump' -printf '%f\n' | sort -r)
+for ((i=3; i<${#dumps[@]}; i++)); do rm -- "$backups/${dumps[i]}"; done
+printf 'sha=%s\nprevious_image=%s\nbackup=%s\n' "$sha" "$old_image" "$backup" > "$state/needs-recovery"
+migrating=true
+# Private server log: migration diagnostics must not enter the Actions output.
+compose run --rm --no-deps migrate > "$state/migration.log" 2>&1 || {
+  echo "Migration failed; root can inspect $state/migration.log" >&2; exit 1;
+}
+compose up -d --no-deps --pull never api
+ready=false
+for ((attempt=0; attempt<30; attempt++)); do
+  if curl --fail --silent --max-time 3 http://127.0.0.1:8091/health >/dev/null && \
+     curl --fail --silent --max-time 3 http://127.0.0.1:8091/api/recipes >/dev/null; then
+    ready=true; break
+  fi
+  sleep 2
+done
+[[ $ready == true ]] || { echo 'API verification failed; manual recovery required' >&2; exit 1; }
+printf 'sha=%s\nprevious_image=%s\nbackup=%s\n' "$sha" "$old_image" "$backup" > "$state/current.tmp"
+mv "$state/current.tmp" "$state/current"
+rm -- "$state/needs-recovery"
+echo "Deployment healthy: $sha"

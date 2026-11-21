@@ -1,0 +1,2 @@
+# Root-owned script validates both arguments. No shell or Docker access is granted.
+happymeal-deploy ALL=(root) NOPASSWD: /usr/local/sbin/happymeal-deploy

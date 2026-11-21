@@ -1,0 +1,117 @@
+name: HappyMeal testing
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy after publishing (disable for initial GHCR setup)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Do not interrupt an in-progress migration. PRs have independent validation.
+concurrency:
+  group: happymeal-testing-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'deployment' }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: Happymeal-BE/global.json
+      - name: Build
+        working-directory: Happymeal-BE
+        run: dotnet build Happymeal.slnx -c Release
+      - name: Unit tests
+        working-directory: Happymeal-BE
+        run: dotnet test --project tests/Happymeal.UnitTests -c Release --no-build
+      - name: Integration tests (isolated PostgreSQL via Testcontainers)
+        working-directory: Happymeal-BE
+        run: dotnet test --project tests/Happymeal.IntegrationTests -c Release --no-build
+      - name: Deployment failure scenarios
+        run: |
+          bash -n Happymeal-BE/deploy/install.sh
+          docker run --rm --entrypoint sh -e HAPPYMEAL_DEPLOY_TEST=1 \
+            --mount "type=bind,source=$PWD/Happymeal-BE/deploy,target=/source,readonly" \
+            postgres:18-alpine -c \
+            'apk add --no-cache bash util-linux coreutils findutils >/dev/null && bash /source/test-deploy.sh'
+      - name: Debian installer and restricted SSH
+        run: |
+          docker run --rm --entrypoint bash -e HAPPYMEAL_DEPLOY_TEST=1 \
+            --mount "type=bind,source=$PWD/Happymeal-BE/deploy,target=/source,readonly" \
+            debian:trixie-slim -c \
+            'apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server sudo curl >/dev/null && bash /source/test-install.sh'
+
+  publish:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+      - name: Publish API and migration images without replacing existing commit tags
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          docker buildx create --use --name happymeal-ci
+          bash Happymeal-BE/deploy/publish-images.sh "$COMMIT_SHA"
+      - name: Summary
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          printf 'Published API and migration images: `sha-%s`\n' "$COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: publish
+    if: github.ref == 'refs/heads/develop' && vars.HOMELAB_DEPLOY_ENABLED == 'true' && (github.event_name == 'push' || inputs.deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: testing
+    steps:
+      - name: Deploy through the restricted SSH command
+        env:
+          DEPLOY_KEY: ${{ secrets.HOMELAB_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOMELAB_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.HOMELAB_HOST }}
+          DEPLOY_PORT: ${{ vars.HOMELAB_SSH_PORT }}
+          COMMIT_SHA: ${{ github.sha }}
+          WORKFLOW_RUN: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          [[ -n "$DEPLOY_KEY" && -n "$KNOWN_HOSTS" ]]
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$DEPLOY_PORT" =~ ^[0-9]{1,5}$ ]]
+          (( 10#$DEPLOY_PORT >= 1 && 10#$DEPLOY_PORT <= 65535 ))
+          umask 077
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          printf '%s\n' "$DEPLOY_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          ssh -T -i "$ssh_dir/key" -p "$DEPLOY_PORT" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+            "happymeal-deploy@$DEPLOY_HOST" "deploy $COMMIT_SHA $WORKFLOW_RUN"
+          printf 'Healthy deployment: `%s`\n' "$COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
