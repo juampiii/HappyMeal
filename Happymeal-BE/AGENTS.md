@@ -19,6 +19,10 @@ dotnet ef migrations add <Name> --project src/Happymeal.Infrastructure --startup
 
 Integration tests need Docker and are slow. Run them only after asking.
 
+## Git
+
+Feature branches use `feature/<issue>-<description>` (for example, `feature/14-automate-testing`).
+
 ## Hard rules
 
 - Do not add Aspire, MediatR, MassTransit, or packages with a commercial license such as FluentAssertions 8+. Shared building blocks go in `src/Happymeal.Common`.
