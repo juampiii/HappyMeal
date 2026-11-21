@@ -184,9 +184,9 @@ Compose names everything with a **project name**, which is the folder name by de
 
 ## Try it
 
-Run these steps from the `Happymeal-BE` folder. Each one confirms a concept from this document.
+Run these steps from the `Happymeal-BE` folder against a disposable local database. Create `.env` and configure the local SDK connection string as described in the [README](../../README.md#run-the-api-with-the-local-sdk) first. Each step confirms a concept from this document.
 
-1. `docker compose up -d`, then `docker compose ps`. The `postgres` service is running.
+1. `docker compose up -d postgres`, then `docker compose ps`. Only the `postgres` service is running; the API will run through the local SDK in this exercise.
 2. `dotnet run --project src/Happymeal.API`. In Development, the API applies the migrations at startup.
 3. Check the data:
    ```bash
@@ -198,8 +198,8 @@ Run these steps from the `Happymeal-BE` folder. Each one confirms a concept from
    > 'SELECT count(*) FROM "Happymeal"."Recipes";' | docker compose exec -T postgres psql -U happymeal -d happymeal
    > ```
 4. Create a recipe from the Scalar UI, and run the query again.
-5. `docker compose down`, then `docker compose up -d`. Run the query. The recipe is still there, because the volume survived.
-6. `docker compose down -v`, then `docker compose up -d`. Start the API again. The table is back, but empty.
+5. Stop the local SDK API, run `docker compose down`, then `docker compose up -d postgres`. Start the API again and run the query. The recipe is still there, because the volume survived.
+6. For this disposable local database only, stop the API, run `docker compose down -v`, then `docker compose up -d postgres`. Start the API again. The table is back, but empty. Never run this volume deletion against the homelab database.
 
 ## Check yourself
 
@@ -215,4 +215,4 @@ Try to answer without looking at the text.
 
 ## Where to go next
 
-The second document builds the missing Dockerfile for the API, adds the API to Compose, and covers versioning and the manual deployment to the Debian server.
+The second document explains the implemented Dockerfile, API and migration services, versioning, and the manual deployment to the Debian server.
