@@ -21,7 +21,7 @@ Integration tests need Docker and are slow. Run them only after asking.
 
 ## Git
 
-Feature branches use `feature/<issue>-<description>` (for example, `feature/14-automate-testing`).
+Feature branches use `feature/<issue>-<description>` (for example: `feature/14-automate-testing`).
 
 ## Hard rules
 
