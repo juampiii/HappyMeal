@@ -4,6 +4,33 @@ El objetivo es que una PR fusionada en `develop` actualice automáticamente el
 entorno `testing` del homelab. Se admite una interrupción breve de la API.
 Guardar estos archivos en el repositorio no los instala ni activa el despliegue.
 
+## Configuración realizada y estado actual
+
+Inventario confirmado el **22 de noviembre de 2026**. La instalación del servidor
+está completada; **el primer despliegue automático sigue pendiente**. El entorno
+de GitHub y sus secretos ya están preparados. Falta habilitar el interruptor de
+repositorio y verificar la ejecución completa. Las dos imágenes publicadas para
+el commit `04cc9bf4db0314af74b2e445e56a89aa05305139` son **privadas**: la descarga
+anónima devuelve `unauthorized`. Antes de activar, hacer públicos ambos paquetes
+según lo acordado, o configurar credenciales de lectura en el servidor.
+
+| Dónde | Configuración realizada | Para qué sirve |
+|---|---|---|
+| GitHub → Settings → Environments → `testing` | Selected branches and tags: solo la rama `develop`, sin etiquetas; sin revisores obligatorios ni espera | El job `deploy` solo puede usar este entorno desde `develop`, sin intervención manual en cada despliegue. |
+| Router | Reserva DHCP de `192.168.1.142` y TCP `2222` externo → `192.168.1.142:22` | Mantiene estable el destino local y lleva las conexiones externas al SSH del homelab. |
+| Duck DNS | `homepilab-juampi.duckdns.org`; actualización con `homepilab-ddns.timer` | Mantiene el nombre apuntando a la IPv4 pública cuando cambia. El token permanece en el servidor. |
+| Homelab | Compose y `runtime.env` en `/etc/happymeal`, propiedad de root | Configuración del despliegue y contraseña de PostgreSQL fuera de GitHub y del repositorio. |
+| Homelab | Scripts en `/usr/local/sbin`, permiso sudo limitado y cuenta `happymeal-deploy` restringida | Actions puede solicitar un despliegue, pero no obtener consola ni modificar scripts o Compose. |
+| Homelab → systemd | `/etc/systemd/system/homepilab-firewall.service.d/20-public-ssh.conf` | Permite conexiones IPv4 TCP nuevas al puerto **22 interno**, en `wlp4s0` y `enp5s0f1`. El router ya transforma el puerto externo 2222 en 22. |
+| Homelab → copias | `/var/backups/happymeal`, retención de tres copias completadas | Permite recuperar datos anteriores a una migración; las copias se generan durante los despliegues. |
+
+Para reaplicar la configuración persistente del firewall, usar como administrador
+`systemctl restart homepilab-firewall.service`. No ejecutar directamente el
+archivo de reglas original: se omitiría el ajuste del drop-in de systemd. Este
+servicio y su ajuste son configuración del homelab, no los instala `install.sh`.
+
+Las secciones siguientes explican cómo reproducir y mantener la instalación.
+
 ## Qué hace cada pieza
 
 | Pieza | Dónde se usa | Para qué sirve |
@@ -131,8 +158,9 @@ y el job `test` del workflow antes del merge.
 
 Dejar la variable de repositorio `HOMELAB_DEPLOY_ENABLED` ausente o en `false`.
 Al fusionar el workflow en `develop`, ejecutará las pruebas y publicará las
-imágenes, pero omitirá el despliegue. También puede lanzarse manualmente desde
-`develop` dejando desmarcada la opción `deploy`.
+imágenes, pero omitirá el despliegue. La ejecución manual con `workflow_dispatch`
+solo estará disponible si este workflow existe en la rama predeterminada. La
+rama predeterminada actual es `main`; no se cambia como parte de esta instalación.
 
 En GitHub > perfil > Packages, cambiar a **Public** los paquetes `happymeal-api`
 y `happymeal-migrate`. Los paquetes nuevos de GHCR pueden ser privados aunque el
@@ -146,14 +174,22 @@ homelab**. Es el puerto propuesto; si ya se usa, elegir otro. Esta acción hace
 accesible SSH desde Internet y se configura explícitamente en el router.
 No abrir PostgreSQL ni la administración del router.
 
-En el entorno GitHub `testing`, crear:
+Las **variables** son configuración no confidencial; los **secretos** contienen
+credenciales o datos de confianza que GitHub guarda cifrados. Se configuran en
+GitHub → Settings → Environments → `testing`. Los cuatro valores siguientes ya
+están guardados en ese entorno y los consume el job `deploy` de `testing.yml`:
 
-| Tipo | Nombre | Valor |
-|---|---|---|
-| Variable | `HOMELAB_HOST` | `homepilab-juampi.duckdns.org` |
-| Variable | `HOMELAB_SSH_PORT` | `2222`, o el puerto elegido |
-| Secreto | `HOMELAB_SSH_KEY` | Contenido completo de la clave privada exclusiva |
-| Secreto | `HOMELAB_KNOWN_HOSTS` | Identidad del servidor con el formato siguiente |
+| Tipo | Nombre | Valor o contenido | Cómo lo utiliza el workflow |
+|---|---|---|---|
+| Variable del entorno | `HOMELAB_HOST` | `homepilab-juampi.duckdns.org` | Destino de la conexión SSH. |
+| Variable del entorno | `HOMELAB_SSH_PORT` | `2222` | Puerto externo de la conexión SSH. |
+| Secreto del entorno | `HOMELAB_SSH_KEY` | Clave privada exclusiva de Actions, guardada por el usuario; no se documenta su valor | Autentica al **cliente**, GitHub Actions, como `happymeal-deploy`. |
+| Secreto del entorno | `HOMELAB_KNOWN_HOSTS` | Clave pública ED25519 del servidor asociada al nombre y puerto | Verifica la identidad del **servidor**, evitando conectar con otro equipo. |
+
+La huella pública del servidor verificada en la configuración es
+`SHA256:zLv3eEf39Fg/w3e5LnnXDKSsr4VHSIXLBScTqnc4izc`. La identidad pública no es
+una contraseña. Si se reinstala el servidor y cambia su clave, verificar la nueva
+huella desde el propio servidor antes de actualizar `HOMELAB_KNOWN_HOSTS`.
 
 El instalador muestra la clave **pública** ED25519 del servidor. Usarla para
 construir una línea como:
@@ -167,20 +203,66 @@ la clave del servidor. La clave privada de Actions está en el ordenador, en
 `C:\Users\jprod\.ssh\happymeal-actions-testing`. Introducirla directamente en el
 secreto de GitHub; no copiarla al repositorio ni al chat.
 
+La clave personal `homepilab-juampi-personal` autentica al administrador `juampi`
+desde su ordenador y **no se usa en Actions**. Su frase de paso tampoco se guarda
+en los secretos del workflow. No confundir la clave privada del cliente con la
+clave pública del servidor: cumplen funciones distintas.
+
+El `.env` original de `/home/juampi/happymeal` y su copia protegida
+`/etc/happymeal/runtime.env` pertenecen al servidor. Compose lee esta última para
+configurar PostgreSQL y la API; el workflow no necesita conocer esa contraseña.
+El instalador conserva `runtime.env` al reinstalar, por lo que los cambios de
+contraseña deben actualizarse allí expresamente, además de aplicarse en la base.
+
+`GITHUB_TOKEN` es otro secreto, generado automáticamente por GitHub para cada
+ejecución. El job `publish` lo usa para autenticarse en GHCR con permiso
+`packages: write`; no hay que crear un token personal con ese nombre.
+
 ## 4. Primera prueba y activación
 
-Probar la conexión desde fuera de la LAN: Duck DNS no demuestra por sí solo que
-la redirección del router funcione. Crear la variable de **repositorio**
-`HOMELAB_DEPLOY_ENABLED=true`. Debe ser de repositorio porque el workflow la lee
-antes de entrar en el entorno `testing`.
+Probar la conexión desde fuera de la LAN y la descarga de ambas imágenes: Duck DNS
+no demuestra por sí solo que la redirección del router funcione. El interruptor
+**todavía pendiente de configurar** es:
 
-Lanzar el workflow manualmente desde `develop`, marcando `deploy`. El resultado
-esperado es publicación de las dos imágenes y `Deployment healthy: <commit>`.
-Comprobar los endpoints, el estado y la copia desde el servidor. Desde entonces,
-cada merge a `develop` despliega automáticamente.
+| Dónde | Tipo y nombre | Valores | Quién lo consume |
+|---|---|---|---|
+| GitHub → Settings → Secrets and variables → Actions → Variables | Variable de **repositorio** `HOMELAB_DEPLOY_ENABLED` | `true` activa; `false` o ausente omite el despliegue | Condición del job `deploy`, antes de acceder al entorno `testing`. |
+
+No crear este interruptor como variable de entorno: su ámbito de repositorio
+permite al workflow leerlo antes de entrar en `testing`. Una vez hechas las
+comprobaciones previas, establecer su valor en `true`.
+
+Para probar el commit ya publicado, después de hacer públicos ambos paquetes y
+activar el interruptor, abrir la [ejecución del push a develop](https://github.com/juampiii/HappyMeal/actions/runs/44934419370)
+y elegir **Re-run all jobs**. Repite las pruebas, conserva las imágenes existentes
+y solicita el despliegue del commit `04cc9bf4db0314af74b2e445e56a89aa05305139`.
+No necesita cambiar la rama predeterminada. Otra opción es fusionar una nueva PR
+a `develop` para publicar y desplegar una versión más reciente.
+
+Si más adelante está disponible Run workflow, seleccionar `develop` y marcar
+`deploy`: esa casilla solicita el despliegue manual, pero también necesita el
+interruptor en `true`. El resultado esperado es publicación de las dos imágenes y
+`Deployment healthy: <commit>`. Desde entonces, cada merge a `develop` ejecuta
+pruebas, publicación y despliegue automático.
+
+Tras la primera ejecución, comprobar desde el servidor:
+
+```bash
+curl --fail http://127.0.0.1:8091/health
+curl --fail http://127.0.0.1:8091/api/recipes
+sudo cat /var/lib/happymeal-deploy/state/current
+sudo find /var/backups/happymeal -maxdepth 1 -type f -name '*.dump' -printf '%f\n'
+```
+
+Los endpoints deben responder correctamente, `current` debe identificar el commit
+desplegado y debe existir la copia previa. La retención dejará como máximo tres
+copias completadas cuando se hayan realizado suficientes despliegues. Ninguna de
+estas comprobaciones equivale a haber ensayado una restauración.
 
 Para suspender nuevos despliegues, poner la variable en `false`. No cancelar una
 migración en curso. Las pruebas y publicaciones pueden seguir funcionando.
+Cambiar el interruptor no detiene un despliegue ya iniciado ni revierte una
+versión: la recuperación se trata en la sección siguiente.
 
 ## Estado, copias y recuperación
 
