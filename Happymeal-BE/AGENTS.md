@@ -6,6 +6,9 @@
 
 Use the [skill index](skills/INDEX.md) to choose a skill for the task. Read the architecture skill before designing or reviewing a feature. Open the selected skill's `SKILL.md` and follow its relative links to the references that apply.
 
+For issue planning and closure, apply [issue-planning](skills/issue-planning/SKILL.md)
+as described in the repository's [root instructions](../AGENTS.md).
+
 ## Commands
 
 ```bash
