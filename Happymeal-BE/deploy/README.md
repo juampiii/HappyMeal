@@ -6,13 +6,26 @@ Guardar estos archivos en el repositorio no los instala ni activa el despliegue.
 
 ## Configuración realizada y estado actual
 
-Inventario confirmado el **22 de noviembre de 2026**. La instalación del servidor
-está completada; **el primer despliegue automático sigue pendiente**. El entorno
-de GitHub y sus secretos ya están preparados. Falta habilitar el interruptor de
-repositorio y verificar la ejecución completa. Las dos imágenes publicadas para
-el commit `04cc9bf4db0314af74b2e445e56a89aa05305139` son **privadas**: la descarga
-anónima devuelve `unauthorized`. Antes de activar, hacer públicos ambos paquetes
-según lo acordado, o configurar credenciales de lectura en el servidor.
+**Primer despliegue automático completado el 22 de noviembre de 2026** en la
+[ejecución 7 de Actions](https://github.com/juampiii/HappyMeal/actions/runs/45007222918),
+para el commit `a127cf4965e993a3a60349955031dc6d7865e77d`. El job `deploy` terminó
+correctamente: el interruptor de repositorio estaba activado y Actions pudo
+conectar con el homelab y completar el despliegue. Ambos paquetes de GHCR son
+**públicos**; su descarga anónima se comprobó durante la preparación.
+
+El **23 de noviembre de 2026** se confirmó una copia de **4934 bytes** en el
+servidor, `20261122T092800056522067-a127cf4965e993a3a60349955031dc6d7865e77d.dump`,
+y se ensayó su restauración en una base temporal separada, consultando `Recipes`
+y `OutboxMessages`. El usuario comunicó el resultado
+`Restauración correcta; eliminando la base temporal`, sin errores posteriores
+reportados. La limpieza estaba configurada para borrar solo la base recién
+creada; no se hizo una comprobación independiente posterior de su ausencia.
+
+El listado real contiene **una copia**, no tres. La retención máxima de tres se
+validó en las pruebas del script y se aplicará al acumular más despliegues. Estos
+registros acreditan las comprobaciones indicadas; no son una consulta continua
+del estado del servidor. El archivo `current` y los endpoints se pueden consultar
+con los comandos de la sección de activación.
 
 | Dónde | Configuración realizada | Para qué sirve |
 |---|---|---|
@@ -153,10 +166,25 @@ local con un commit publicado antes de abrir el acceso externo.
 ## 2. Configurar GitHub y publicar las primeras imágenes
 
 Crear el entorno **testing**, restringido a `develop`, sin aprobación manual por
-despliegue si queremos automatización completa. Proteger `develop` para exigir PR
-y el job `test` del workflow antes del merge.
+despliegue si queremos automatización completa. La protección de `develop`
+guardada por el usuario el **23 de noviembre de 2026**, según la captura, es:
 
-Dejar la variable de repositorio `HOMELAB_DEPLOY_ENABLED` ausente o en `false`.
+| Regla | Configuración guardada |
+|---|---|
+| Patrón de rama | `develop` |
+| PR antes del merge | Obligatoria |
+| Aprobaciones de revisión | No obligatorias |
+| Comprobaciones antes del merge | Obligatorio `test`, de GitHub Actions |
+| Rama actualizada con la base antes del merge | No obligatorio |
+| Impedir saltarse las reglas | No marcado; administradores o roles con bypass pueden eludirlas |
+| Force push y eliminación de rama | No permitidos |
+
+Exigir que la rama esté actualizada o impedir el bypass son posibles mejoras de
+la política, no requisitos activados en esta configuración. La protección actual
+permite al propietario trabajar con PR y pruebas sin exigir otro revisor.
+
+Para una instalación nueva, dejar la variable de repositorio
+`HOMELAB_DEPLOY_ENABLED` ausente o en `false` durante la preparación.
 Al fusionar el workflow en `develop`, ejecutará las pruebas y publicará las
 imágenes, pero omitirá el despliegue. La ejecución manual con `workflow_dispatch`
 solo estará disponible si este workflow existe en la rama predeterminada. La
@@ -220,9 +248,10 @@ ejecución. El job `publish` lo usa para autenticarse en GHCR con permiso
 
 ## 4. Primera prueba y activación
 
-Probar la conexión desde fuera de la LAN y la descarga de ambas imágenes: Duck DNS
-no demuestra por sí solo que la redirección del router funcione. El interruptor
-**todavía pendiente de configurar** es:
+Para reproducir la activación, probar la conexión desde fuera de la LAN y la
+descarga de ambas imágenes: Duck DNS no demuestra por sí solo que la redirección
+del router funcione. El interruptor siguiente **ya estaba activado en la ejecución
+7 que completó el despliegue**:
 
 | Dónde | Tipo y nombre | Valores | Quién lo consume |
 |---|---|---|---|
@@ -232,12 +261,12 @@ No crear este interruptor como variable de entorno: su ámbito de repositorio
 permite al workflow leerlo antes de entrar en `testing`. Una vez hechas las
 comprobaciones previas, establecer su valor en `true`.
 
-Para probar el commit ya publicado, después de hacer públicos ambos paquetes y
-activar el interruptor, abrir la [ejecución del push a develop](https://github.com/juampiii/HappyMeal/actions/runs/44934419370)
-y elegir **Re-run all jobs**. Repite las pruebas, conserva las imágenes existentes
-y solicita el despliegue del commit `04cc9bf4db0314af74b2e445e56a89aa05305139`.
-No necesita cambiar la rama predeterminada. Otra opción es fusionar una nueva PR
-a `develop` para publicar y desplegar una versión más reciente.
+Para reintentar un despliegue, abrir la ejecución más reciente de un push a
+`develop` y elegir **Re-run all jobs**. Repite las pruebas, conserva las imágenes
+existentes y solicita el mismo commit y número de ejecución; no necesita cambiar
+la rama predeterminada. No reejecutar una ejecución anterior a la última admitida:
+el servidor la rechazará para evitar sustituir una versión más reciente. Otra
+opción es fusionar una nueva PR a `develop` para publicar y desplegar otra versión.
 
 Si más adelante está disponible Run workflow, seleccionar `develop` y marcar
 `deploy`: esa casilla solicita el despliegue manual, pero también necesita el
@@ -245,7 +274,7 @@ interruptor en `true`. El resultado esperado es publicación de las dos imágene
 `Deployment healthy: <commit>`. Desde entonces, cada merge a `develop` ejecuta
 pruebas, publicación y despliegue automático.
 
-Tras la primera ejecución, comprobar desde el servidor:
+Tras cada ejecución, comprobar desde el servidor:
 
 ```bash
 curl --fail http://127.0.0.1:8091/health
@@ -293,6 +322,61 @@ Las copias se guardan en el mismo servidor: no protegen frente a pérdida de dis
 o del equipo. Comprobar el índice del archivo no demuestra una restauración
 correcta; ensayarla contra una base separada antes de confiar en ella.
 
+### Ensayo de restauración en una base separada
+
+**Ensayo realizado el 23 de noviembre de 2026**, con el resultado comunicado en
+el inventario inicial. El bloque siguiente permite repetirlo desde una sesión
+Bash del homelab como `root`: utiliza la copia registrada en `state/current`,
+crea una base con nombre único en el PostgreSQL existente y la elimina al terminar.
+No restaura sobre `happymeal`, no usa `--create` ni `--clean` y no conecta la API
+ni el outbox a la base de ensayo. Conviene hacerlo sin un despliegue simultáneo,
+para evitar que la retención retire la copia seleccionada mientras se lee.
+
+```bash
+(
+set -eu
+backup=$(sed -n 's/^backup=//p' /var/lib/happymeal-deploy/state/current)
+[ "$(dirname "$backup")" = /var/backups/happymeal ] && [ -s "$backup" ]
+
+test_db="happymeal_restorecheck_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
+printf 'Copia: %s\nBase temporal: %s\n' "$backup" "$test_db"
+created=no
+cleanup() {
+  code=$?
+  trap - EXIT
+  if [ "$created" = yes ]; then
+    docker exec happymeal-postgres dropdb -U happymeal -- "$test_db" || code=1
+  fi
+  exit "$code"
+}
+trap cleanup EXIT
+
+docker exec happymeal-postgres createdb -U happymeal -O happymeal -T template0 -- "$test_db"
+created=yes
+docker exec -i happymeal-postgres pg_restore -U happymeal \
+  --dbname="$test_db" --no-owner --no-privileges \
+  --exit-on-error --single-transaction < "$backup"
+
+docker exec -i happymeal-postgres psql -U happymeal -d "$test_db" \
+  -v ON_ERROR_STOP=1 <<'SQL'
+SELECT count(*) AS recetas FROM "Happymeal"."Recipes";
+SELECT count(*) AS eventos_outbox FROM "Happymeal"."OutboxMessages";
+SELECT schemaname, tablename FROM pg_tables
+WHERE tablename IN ('Recipes', 'OutboxMessages', '__EFMigrationsHistory');
+SQL
+
+echo "Restauración comprobada en $test_db; se elimina solo esa base temporal."
+)
+```
+
+Si falla `createdb`, la limpieza no borra una base preexistente. Si falla la
+limpieza, retirar manualmente solo el nombre `happymeal_restorecheck_...` mostrado
+o identificado en esa sesión; nunca usar `happymeal` como destino de `dropdb`.
+El ensayo restaura estructura y datos sin reproducir propietarios ni permisos.
+Los recuentos pueden diferir de la base activa, porque esta puede haber cambiado
+después de la copia. Registrar nombre de la copia, resultado de `pg_restore`,
+consultas y limpieza antes de marcar la recuperación como verificada.
+
 ## Pruebas y límites de la validación
 
 El workflow ejecuta las pruebas unitarias y de integración antes de publicar
@@ -312,7 +396,10 @@ SSH y sudo reales, y simula Docker y la recarga del servicio. Comprueba permisos
 rechazo de órdenes arbitrarias y conservación de la configuración al reinstalar.
 Las herramientas de prueba se instalan solo dentro de los contenedores temporales.
 
-Estas comprobaciones no sustituyen la primera ejecución en Actions, las descargas
-reales de GHCR, la instalación en el Debian del homelab, la conexión externa ni una
-restauración ensayada. El despliegue sigue unido a la sesión SSH y al timeout de
-Actions: una interrupción puede requerir recuperación manual.
+Las pruebas aisladas no sustituyen la verificación en el servidor. El primer
+despliegue real desde Actions y el ensayo de restauración en una base separada
+quedaron registrados al inicio. La conservación de hasta tres copias se probó de
+forma aislada; el listado real verificado tenía una. El despliegue sigue unido a
+la sesión SSH y al timeout de Actions: una interrupción puede requerir recuperación
+manual. Estas verificaciones no acreditan recuperación tras pérdida del servidor
+ni una recuperación completa de la aplicación después de una migración incompatible.
