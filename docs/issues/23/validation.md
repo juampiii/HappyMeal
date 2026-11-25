@@ -1,60 +1,66 @@
-# Validación de refine-feature
+# Validation of refine-feature
 
-**Fecha:** 2026-11-25.
+**Date:** 2026-11-25.
 
-## Estado
+## Status
 
-- `quick_validate.py` de `skill-creator` dio `Skill is valid!` para la skill compartida
-  y para la entrada de Claude Code.
-- Los enlaces del índice y de la entrada resuelven a archivos existentes.
-- La skill **no se ha ejecutado** en una sesión real de Claude Code. Los escenarios
-  siguientes quedan preparados para hacerlo.
+- `quick_validate.py` from `skill-creator` returned `Skill is valid!` for the shared skill
+  and for the Claude Code entry.
+- The links in the index and in the entry resolve to existing files.
+- The scenarios below were run in real Claude Code sessions on 2026-11-25. The results are
+  in the [issue README](README.md).
 
-## Cómo ejecutarlos
+## How to run them
 
-Usar un checkout de prueba y abrir Claude Code desde `Happymeal-BE`. Los archivos deben
-quedar en `docs/stories/` desde la raíz Git, no en `Happymeal-BE/docs/stories/`.
+Use a test checkout and open Claude Code from `Happymeal-BE`. The files must end up in
+`docs/stories/` from the Git root, not in `Happymeal-BE/docs/stories/`.
 
-Durante cada sesión, comprobar también que:
+The scenario messages are in Spanish on purpose. They are what the user types in the
+chat, and they check that the conversation follows the user's language while the
+document is written in English.
 
-- solo lee el documento seleccionado y la propia skill, sin consultar código ni
-  documentación para completar requisitos;
-- guarda el documento tras cada ronda, en una carpeta propia con nombre en inglés y
-  un archivo por idioma (`docs/stories/<nombre>/<nombre>.es.md`);
-- pregunta y escribe en español, porque las peticiones de los escenarios están en
-  español. Los títulos y los estados de la plantilla deben salir traducidos
-  (`Pendiente de refinar`, `Lista para planificación técnica`);
-- no publica nada fuera ni propone diseño técnico.
+During each session, also check that it:
 
-## 1. Idea ambigua, confirmación parcial y pausa
+- reads only the selected document and the skill itself, without looking at code or
+  documentation to complete requirements;
+- saves the document after each round, in its own folder with an English name and one
+  file per language (`docs/stories/<name>/<name>.en.md`);
+- asks questions in Spanish and writes the story in English by default. The template
+  headings and the status values come out in English (`Needs refinement`,
+  `Ready for technical planning`). When it resumes a story that is in Spanish, it keeps
+  Spanish;
+- does not publish anything outside the repository and does not propose a technical
+  design.
+
+## 1. Ambiguous idea, partial confirmation and pause
 
 ```text
 /refine-feature Quiero organizar mejor mis comidas.
 ```
 
-Debe resumir en dos o tres frases y hacer un máximo de cinco preguntas. No debe decidir
-por su cuenta el rol, el beneficio, el periodo ni reglas sobre recetas o nutrición.
+It must summarize in two or three sentences and ask five questions at most. It must not
+decide on its own the role, the benefit, the period or rules about recipes or nutrition.
 
-Responder solo al rol y al beneficio:
+Reply only about the role and the benefit:
 
 ```text
 Lo usaré yo para decidir qué comer sin tener que improvisar cada día.
 ```
 
-Debe actualizar el documento, conservar el resto pendiente y no repetir lo resuelto. Si
-ofrece propuestas explícitas, responder «ok»: solo esas pasan a confirmadas.
+It must update the document, keep the rest pending and not repeat what is resolved. If it
+offers explicit proposals, reply "ok": only those become confirmed.
 
-Con una decisión bloqueante abierta, responder:
+With a blocking decision still open, reply:
 
 ```text
 Suficiente por hoy, termina aunque falte concretar lo demás.
 ```
 
-**Resultado esperado:** el archivo `docs/stories/<nombre>/<nombre>.es.md` queda en estado
-`Pendiente de refinar`, con los bloqueos identificados, y el documento completo se
-muestra en un único bloque Markdown. La orden de terminar no confirma propuestas.
+**Expected result:** the file `docs/stories/<name>/<name>.en.md` stays in status
+`Needs refinement`, with the blockers identified, and the full document is shown in a
+single Markdown block. The order to finish does not confirm proposals.
 
-## 2. Historia demasiado grande
+## 2. Story that is too big
 
 ```text
 /refine-feature Como persona que cocina en casa, quiero planificar mis menús,
@@ -62,22 +68,23 @@ generar la lista de la compra, comprar en supermercados y compartir la planifica
 con mi familia, para ahorrar tiempo al organizar nuestras comidas.
 ```
 
-Debe usar INVEST para detectar el tamaño, proponer entregas con valor independiente y
-pedir que se confirme la división. No debe crear historias que no se hayan confirmado, inventar una
-integración con supermercados ni diseñar pagos, endpoints o almacenamiento.
+It must use INVEST to detect the size, propose deliveries with independent value and ask
+the user to confirm the split. It must not create stories that are not confirmed, invent a
+supermarket integration or design payments, endpoints or storage.
 
-Responder:
+Reply:
 
 ```text
 Empecemos solo por planificar un menú para mí. Dejamos compra y compartir fuera.
 ```
 
-**Resultado esperado:** refina solo esa entrega y deja las otras capacidades fuera de
-alcance. Sigue preguntando las reglas del menú que estén abiertas.
+**Expected result:** it refines only that delivery and leaves the other capabilities out of
+scope. It keeps asking the menu rules that are still open.
 
-## 3. Retomar y finalizar una historia
+## 3. Resume and finish a story
 
-Crear en el checkout de prueba `docs/stories/view-menu/view-menu.es.md`:
+Create in the test checkout `docs/stories/view-menu/view-menu.es.md`. The story is in
+Spanish on purpose, to check that the skill keeps the language of a story it resumes:
 
 ```markdown
 # Consultar mi menú semanal
@@ -128,25 +135,26 @@ El menú ya está planificado. Necesito consultarlo para no improvisar.
 /refine-feature Retoma docs/stories/view-menu/view-menu.es.md
 ```
 
-Debe recuperar las decisiones sin volver a preguntar rol, periodo ni exclusiones, y
-presentar las propuestas pendientes. Responder «ok».
+It must recover the decisions without asking again the role, the period or the
+exclusions, and present the pending proposals. Reply "ok".
 
-**Resultado esperado:** P1 y P2 pasan a ser reglas y criterios observables (en errores
-o casos límite), desaparecen esas dudas y el estado cambia a
-`Lista para planificación técnica` en el mismo archivo. No se crea ningún otro
-documento y el contenido coincide con el bloque Markdown del chat. Con este borrador
-de ejemplo puede aparecer una pregunta nueva y legítima, por ejemplo si cada día tiene
-una sola comida o varias. Respóndela para que la historia pueda cerrarse.
+**Expected result:** P1 and P2 become rules and observable criteria (in errors or edge
+cases), those doubts disappear and the status changes to ready for technical planning in
+the same file, in Spanish. No other document is created and the content matches the
+Markdown block in the chat. With this example draft, a new and legitimate question can
+appear, for example whether each day has one meal or several. Answer it so the story can
+be closed.
 
-Variantes, repetidas por separado desde el documento original:
+Variants, each repeated separately from the original document:
 
-- **Contradicción:** responder «También quiero ver el menú de la semana que viene».
-  Debe aclarar el cambio de alcance antes de sustituir la decisión sobre el periodo.
-- **Nombre ocupado:** pedir una historia nueva cuyo nombre natural sea `view-menu`.
-  No debe sobrescribir la carpeta existente y debe usar otro nombre.
-- **Historias relacionadas por nombre:** con otra historia en `docs/stories/` cuyo nombre
-  se parezca, pedir una idea nueva. Debe juzgar solo por los nombres de carpeta, no
-  abrir esa historia y preguntar si se retoma o es nueva.
-- **Traducción y desfase:** pedir la versión en inglés de una historia lista y después
-  cambiar la española. Debe crear `<nombre>.en.md` con el mismo estado, sin tocar el
-  original, y avisar de que la inglesa queda desfasada sin traducirla por su cuenta.
+- **Contradiction:** reply "También quiero ver el menú de la semana que viene". It must
+  clarify the change of scope before it replaces the decision about the period.
+- **Name already used:** ask for a new story whose natural name is `view-menu`. It must not
+  overwrite the existing folder and must use another name.
+- **Stories related by name:** with another story in `docs/stories/` that has a similar
+  name, ask for a new idea. It must judge only by the folder names, not open that story,
+  and ask whether to resume it or start a new one.
+- **Translation and out-of-date warning:** ask for the English version of a ready story
+  and then change the Spanish one. It must create `<name>.en.md` with the same status,
+  leave the original untouched, and warn that the English file is out of date without
+  translating it by itself.
