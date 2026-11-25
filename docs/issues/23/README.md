@@ -81,12 +81,14 @@ El plan original se conserva en los apartados anteriores.
 
 Implementada el 2026-11-25 la skill compartida y su entrada para Claude Code. Se
 invoca desde `Happymeal-BE` con `/refine-feature <idea>` o indicando el documento
-que se quiere retomar. Guarda historias en `docs/stories/` desde la raíz Git.
+que se quiere retomar. Guarda cada historia en su propia carpeta de `docs/stories/`
+desde la raíz Git.
 
 La skill incluye rondas de hasta cinco preguntas, confirmaciones parciales,
 tratamiento de contradicciones, revisión INVEST, pausa con bloqueos y entrega
-completa en Markdown. Cada historia es un único archivo `<nombre>.md` y su avance
-se indica en el campo `Estado`.
+completa en Markdown. Cada historia es una carpeta `docs/stories/<nombre>/` con un
+archivo por idioma, `<nombre>.<lang>.md`, y su avance se indica en el campo `Estado`
+de cada archivo.
 
 ### Cambios respecto al plan original
 
@@ -99,7 +101,10 @@ evita las comprobaciones de colisión y renombrado. También se añadieron a la
 plantilla los grupos de criterios camino feliz, errores y casos límite. Las
 instrucciones de la skill pasaron a inglés, como las del resto de skills; la
 conversación y la historia usan el idioma que pida el usuario o, si no pide
-ninguno, el que escriba. La revisión
+ninguno, el que escriba. Después, cada historia pasó de un único archivo
+`<nombre>.md` a una carpeta con un archivo por idioma. El nombre va en inglés, las
+traducciones solo se crean si el usuario las pide y los enlaces entre historias
+apuntan al mismo idioma. La revisión
 de escenarios es manual; la ejecución de
 conversaciones en Claude Code sigue pendiente por no disponer del ejecutable.
 
@@ -109,8 +114,11 @@ conversaciones en Claude Code sigue pendiente por no disponer del ejecutable.
 - Enlaces del índice y de la entrada de Claude Code: resueltos correctamente.
 - Recorrido manual de los tres escenarios y variantes: cobertura de instrucciones
   revisada. Datos, resultados esperados y límites en [validacion.md](validacion.md).
-- No se ha ejecutado la skill dentro de Claude Code ni comprobado su descubrimiento
-  y guardado en una sesión real. No se han modificado componentes ejecutables del
+- Prueba parcial en una sesión real de Claude Code (2026-11-25): se refinaron tres
+  historias de recetas siguiendo la skill, leída como instrucciones porque
+  `/refine-feature` no estaba registrado al iniciar la sesión desde la raíz del
+  repositorio. Se comprobaron rondas, confirmaciones, pausa, entrega y traducciones.
+- No se ha comprobado su invocación con `/refine-feature` desde `Happymeal-BE`. No se han modificado componentes ejecutables del
   backend, por lo que no corresponde ejecutar sus pruebas .NET.
 
 ### Pendientes y limitaciones

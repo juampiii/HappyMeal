@@ -19,7 +19,8 @@ Durante cada sesión, comprobar también que:
 
 - solo lee el documento seleccionado y la propia skill, sin consultar código ni
   documentación para completar requisitos;
-- guarda el documento tras cada ronda;
+- guarda el documento tras cada ronda, en una carpeta propia con nombre en inglés y
+  un archivo por idioma (`docs/stories/<nombre>/<nombre>.es.md`);
 - pregunta y escribe en español, porque las peticiones de los escenarios están en
   español. Los títulos y los estados de la plantilla deben salir traducidos
   (`Pendiente de refinar`, `Lista para planificación técnica`);
@@ -49,7 +50,7 @@ Con una decisión bloqueante abierta, responder:
 Suficiente por hoy, termina aunque falte concretar lo demás.
 ```
 
-**Resultado esperado:** el archivo `docs/stories/<nombre>.md` queda en estado
+**Resultado esperado:** el archivo `docs/stories/<nombre>/<nombre>.es.md` queda en estado
 `Pendiente de refinar`, con los bloqueos identificados, y el documento completo se
 muestra en un único bloque Markdown. La orden de terminar no confirma propuestas.
 
@@ -76,7 +77,7 @@ alcance. Sigue preguntando las reglas del menú que estén abiertas.
 
 ## 3. Retomar y finalizar una historia
 
-Crear en el checkout de prueba `docs/stories/consultar-menu.md`:
+Crear en el checkout de prueba `docs/stories/view-menu/view-menu.es.md`:
 
 ```markdown
 # Consultar mi menú semanal
@@ -124,7 +125,7 @@ El menú ya está planificado. Necesito consultarlo para no improvisar.
 ```
 
 ```text
-/refine-feature Retoma docs/stories/consultar-menu.md
+/refine-feature Retoma docs/stories/view-menu/view-menu.es.md
 ```
 
 Debe recuperar las decisiones sin volver a preguntar rol, periodo ni exclusiones, y
@@ -139,5 +140,5 @@ Variantes, repetidas por separado desde el documento original:
 
 - **Contradicción:** responder «También quiero ver el menú de la semana que viene».
   Debe aclarar el cambio de alcance antes de sustituir la decisión sobre el periodo.
-- **Nombre ocupado:** pedir una historia nueva cuyo nombre natural sea `consultar-menu`.
-  No debe sobrescribir el archivo existente y debe usar otro nombre.
+- **Nombre ocupado:** pedir una historia nueva cuyo nombre natural sea `view-menu`.
+  No debe sobrescribir la carpeta existente y debe usar otro nombre.

@@ -4,8 +4,8 @@ description: Refine a feature idea ("I want to be able to create a recipe...") i
 ---
 
 Read the shared instructions before you start refining. Resolve their relative links
-from the shared file. Stories are saved in `docs/stories/` from the project's Git
-root, not from this entry's directory.
+from the shared file. Stories are saved in `docs/stories/<name>/<name>.<lang>.md` from
+the project's Git root, not from this entry's directory.
 
 | File | When to read it |
 | --- | --- |
