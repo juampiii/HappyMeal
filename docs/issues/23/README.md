@@ -3,7 +3,7 @@
 **Issue:** [#23](https://github.com/juampiii/HappyMeal/issues/23)
 **Fecha del plan:** 2026-11-25
 **Estado del plan:** Acordado
-**Estado de la historia:** Resultado parcial: implementación terminada, prueba en Claude Code pendiente
+**Estado de la historia:** Cerrada: implementación terminada y escenarios de validación ejecutados en Claude Code
 **Última revisión:** 2026-11-25
 **Origen:** Plan previo al trabajo, basado en el alcance acordado para la v1.
 
@@ -99,39 +99,75 @@ conservan el nombre original. En la revisión posterior se eliminó la conversi�
 `borrador-<nombre>.md` a `<nombre>.md` (paso 1): un solo archivo con campo `Estado`
 evita las comprobaciones de colisión y renombrado. También se añadieron a la
 plantilla los grupos de criterios camino feliz, errores y casos límite. Las
-instrucciones de la skill pasaron a inglés, como las del resto de skills; la
-conversación y la historia usan el idioma que pida el usuario o, si no pide
-ninguno, el que escriba. Después, cada historia pasó de un único archivo
-`<nombre>.md` a una carpeta con un archivo por idioma. El nombre va en inglés, las
-traducciones solo se crean si el usuario las pide y los enlaces entre historias
-apuntan al mismo idioma. La revisión
-de escenarios es manual; la ejecución de
-conversaciones en Claude Code sigue pendiente por no disponer del ejecutable.
+instrucciones de la skill pasaron a inglés, como las del resto de skills. Después,
+cada historia pasó de un único archivo `<nombre>.md` a una carpeta con un archivo por
+idioma. El nombre va en inglés, las traducciones solo se crean si el usuario las pide
+y los enlaces entre historias apuntan al mismo idioma. La historia se escribe en
+inglés por defecto, aunque la conversación siga el idioma del usuario, en línea con
+`AGENTS.md`. `validacion.md` se renombró a `validation.md`. La revisión de escenarios
+fue manual al principio; después se ejecutaron en sesiones reales de Claude Code (ver
+«Validación realizada»). De esa ejecución salió un ajuste: el paso 1 de la skill
+indica ahora que se juzga si una historia está relacionada solo por el nombre de su
+carpeta, y que solo se lee la historia que el usuario elige.
 
 ### Validación realizada
 
 - Validador de `skill-creator`: ambas skills válidas.
 - Enlaces del índice y de la entrada de Claude Code: resueltos correctamente.
 - Recorrido manual de los tres escenarios y variantes: cobertura de instrucciones
-  revisada. Datos, resultados esperados y límites en [validacion.md](validacion.md).
-- Prueba parcial en una sesión real de Claude Code (2026-11-25): se refinaron tres
-  historias de recetas siguiendo la skill, leída como instrucciones porque
-  `/refine-feature` no estaba registrado al iniciar la sesión desde la raíz del
-  repositorio. Se comprobaron rondas, confirmaciones, pausa, entrega y traducciones.
-- No se ha comprobado su invocación con `/refine-feature` desde `Happymeal-BE`. No se han modificado componentes ejecutables del
-  backend, por lo que no corresponde ejecutar sus pruebas .NET.
+  revisada. Datos, resultados esperados y límites en [validation.md](validation.md).
+- Escenario 1 ejecutado en una sesión real de Claude Code abierta en `Happymeal-BE`
+  (2026-11-25), con `/refine-feature` ya registrado. Resultado: la skill se descubrió
+  e invocó, localizó la raíz Git y guardó `docs/stories/organize-meals/organize-meals.en.md`
+  en inglés aunque la conversación fue en español. Hizo cinco preguntas sin proponer
+  respuestas sin base, confirmó solo lo respondido sin repetirlo, no confirmó nada con
+  la orden de parar, dejó el estado en `Needs refinement` y entregó el documento
+  completo en un único bloque Markdown. El resultado de la prueba se borró después.
+- Resto de escenarios ejecutados el mismo día en sesiones reales abiertas en
+  `Happymeal-BE`:
+  - Escenario 2 (historia grande): propuso dividir en cuatro historias, no guardó
+    ninguna hasta que se confirmó el reparto, no inventó una integración con
+    supermercados y, ya confirmado, refinó solo `plan-menu` con el resto fuera de
+    alcance.
+  - Escenario 3 (retomar y finalizar): recuperó las decisiones sin volver a
+    preguntarlas, el «ok» confirmó solo P1 y P2, que pasaron a reglas, decisiones y
+    criterios, y la historia pasó a «Listo para planificación técnica» en el mismo
+    archivo y en español. Antes de cerrar planteó dos preguntas nuevas y legítimas
+    (una comida por día y qué datos se muestran), que se respondieron.
+  - Variante de contradicción: mantuvo lo confirmado, dejó el conflicto como duda
+    bloqueante y preguntó qué prevalece.
+  - Variante de nombre ocupado: usó otro nombre y la historia existente quedó intacta
+    (mismo hash).
+  - Traducción: creó `view-menu.en.md` con el mismo estado y sin tocar el original.
+    Al cambiar la española avisó de que la inglesa quedaba desfasada y no la tradujo.
+    Tradujo también los textos literales de pantalla («Sin planificar» a "Not
+    planned"), algo a tener en cuenta si deben mantenerse tal cual.
+- Hallazgo del escenario 2: con otra historia relacionada en `docs/stories/`, la sesión
+  la abrió para decidir si lo estaba y usó su contenido. Se precisó el paso 1. En una
+  sesión nueva, con carpetas de nombre parecido y una historia marcada, no abrió
+  ninguna y preguntó si retomaba una o era nueva. No se repitió el escenario 2 completo
+  con el ajuste.
+- Todo lo generado por las pruebas se borró al terminar.
+- Antes de eso, una sesión iniciada desde la raíz del repositorio no tenía registrado
+  `/refine-feature`; apareció al abrir un archivo de `Happymeal-BE`. Por eso se invoca
+  desde `Happymeal-BE`.
+- Con la entrada de Claude Code la sesión de prueba aplicó la deducción «uso solo yo»
+  a partir de «lo usaré yo». Es razonable, pero no es una confirmación literal.
+- No se han modificado componentes ejecutables del backend, por lo que no
+  corresponde ejecutar sus pruebas .NET.
 
 ### Pendientes y limitaciones
 
-Ejecutar los escenarios de [validacion.md](validacion.md) dentro de Claude Code
-antes de dar por cerrada la validación funcional de la issue.
+Ninguno que impida cerrar la issue. Quedan dos mejoras opcionales: repetir el
+escenario 2 completo con el paso 1 ya precisado y decidir si los textos literales de
+pantalla deben mantenerse en el idioma original al traducir una historia.
 
 ## 7. Referencia técnica final
 
 - [Instrucciones compartidas](../../../Happymeal-BE/skills/refine-feature/SKILL.md).
 - [Entrada para Claude Code](../../../Happymeal-BE/.claude/skills/refine-feature/SKILL.md).
 - [Índice de skills](../../../Happymeal-BE/skills/INDEX.md).
-- [Escenarios de validación](validacion.md).
+- [Escenarios de validación](validation.md).
 
 ## 8. Palabras clave
 

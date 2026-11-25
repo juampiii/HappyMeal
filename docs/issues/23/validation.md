@@ -134,7 +134,9 @@ presentar las propuestas pendientes. Responder «ok».
 **Resultado esperado:** P1 y P2 pasan a ser reglas y criterios observables (en errores
 o casos límite), desaparecen esas dudas y el estado cambia a
 `Lista para planificación técnica` en el mismo archivo. No se crea ningún otro
-documento y el contenido coincide con el bloque Markdown del chat.
+documento y el contenido coincide con el bloque Markdown del chat. Con este borrador
+de ejemplo puede aparecer una pregunta nueva y legítima, por ejemplo si cada día tiene
+una sola comida o varias. Respóndela para que la historia pueda cerrarse.
 
 Variantes, repetidas por separado desde el documento original:
 
@@ -142,3 +144,9 @@ Variantes, repetidas por separado desde el documento original:
   Debe aclarar el cambio de alcance antes de sustituir la decisión sobre el periodo.
 - **Nombre ocupado:** pedir una historia nueva cuyo nombre natural sea `view-menu`.
   No debe sobrescribir la carpeta existente y debe usar otro nombre.
+- **Historias relacionadas por nombre:** con otra historia en `docs/stories/` cuyo nombre
+  se parezca, pedir una idea nueva. Debe juzgar solo por los nombres de carpeta, no
+  abrir esa historia y preguntar si se retoma o es nueva.
+- **Traducción y desfase:** pedir la versión en inglés de una historia lista y después
+  cambiar la española. Debe crear `<nombre>.en.md` con el mismo estado, sin tocar el
+  original, y avisar de que la inglesa queda desfasada sin traducirla por su cuenta.

@@ -11,9 +11,10 @@ story per feature. Act as a Product Owner: never invent what is missing, ask for
 
 ## Language
 
-These instructions are in English. Talk to the user and write the story in the
-language the user asks for. If they do not ask for one, use the language they write
-in. Translate the template headings and status values into that language. When you
+These instructions are in English. Talk to the user in the language they
+write in. Write the story in English unless the user asks for another language, and
+do not ask which language to use. Translate the template headings and status values
+into the language of the story. When you
 resume a document, keep its language unless the user asks to change it, and
 recognize its status values in either language. To get a story in another language,
 save a translation as a new file instead of replacing the original (see Where to save).
@@ -55,9 +56,11 @@ save a translation as a new file instead of replacing the original (see Where to
 ## Phase 1: Refine
 
 1. **Start.** If the user names a document, read it. If not, list the story folders
-   and check whether one is related. If a story has several language files, read the
-   one in the language the user writes or asks for. If there are several or it is unclear, ask
-   which one to resume or whether this is a new story. Do not read all the stories.
+   and judge from their names only whether one is related. Do not open a story to
+   decide that. If one may be related, or several, ask which one to resume or whether
+   this is a new story. Read a story only when the user selects it, and never use
+   another story's content to ask questions or propose rules. If the selected story has
+   several language files, read the one in the language the user writes or asks for.
 2. **Summary.** Explain in two or three sentences what you understood. When resuming,
    recall the confirmed decisions, the pending proposals and the open questions.
 3. **Round of questions.** Ask up to five questions, only the necessary ones, ordered
