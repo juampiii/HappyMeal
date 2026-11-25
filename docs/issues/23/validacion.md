@@ -1,71 +1,69 @@
-# Validación de refinar-historia
+# Validación de refine-feature
 
 **Fecha:** 2026-11-25.
 
-## Comprobaciones realizadas
+## Estado
 
-- `quick_validate.py` de `skill-creator`: resultado `Skill is valid!` tanto para
-  `Happymeal-BE/skills/refinar-historia` como para la entrada de Claude Code.
-- Enlaces relativos de la entrada y del índice: todos resuelven a archivos existentes.
-- Revisión manual de las instrucciones con los escenarios siguientes: se han
-  recorrido las decisiones del flujo, sin ejecutar un modelo de Claude Code.
-  Esta revisión comprueba cobertura escrita, no demuestra comportamiento en una
-  conversación real ni operaciones de guardado realizadas por Claude.
+- `quick_validate.py` de `skill-creator` dio `Skill is valid!` para la skill compartida
+  y para la entrada de Claude Code.
+- Los enlaces del índice y de la entrada resuelven a archivos existentes.
+- La skill **no se ha ejecutado** en una sesión real de Claude Code. Los escenarios
+  siguientes quedan preparados para hacerlo.
 
-El entorno no dispone del ejecutable `claude`. Los escenarios quedan preparados
-para repetirlos en una sesión real. Usar un checkout de prueba y comenzar Claude
-Code desde `Happymeal-BE`; los archivos generados deben quedar en `docs/stories/`
-desde la raíz Git, no en `Happymeal-BE/docs/stories/`.
+## Cómo ejecutarlos
+
+Usar un checkout de prueba y abrir Claude Code desde `Happymeal-BE`. Los archivos deben
+quedar en `docs/stories/` desde la raíz Git, no en `Happymeal-BE/docs/stories/`.
+
+Durante cada sesión, comprobar también que:
+
+- solo lee el documento seleccionado y la propia skill, sin consultar código ni
+  documentación para completar requisitos;
+- guarda el documento tras cada ronda;
+- pregunta y escribe en español, porque las peticiones de los escenarios están en
+  español. Los títulos y los estados de la plantilla deben salir traducidos
+  (`Pendiente de refinar`, `Lista para planificación técnica`);
+- no publica nada fuera ni propone diseño técnico.
 
 ## 1. Idea ambigua, confirmación parcial y pausa
 
-Invocación:
-
 ```text
-/refinar-historia Quiero organizar mejor mis comidas.
+/refine-feature Quiero organizar mejor mis comidas.
 ```
 
-Comprobar que resume en dos o tres frases y pregunta solo lo necesario, con un
-máximo de cinco preguntas. No debe decidir por su cuenta el rol, el beneficio,
-el periodo de planificación ni reglas sobre recetas o nutrición.
+Debe resumir en dos o tres frases y hacer un máximo de cinco preguntas. No debe decidir
+por su cuenta el rol, el beneficio, el periodo ni reglas sobre recetas o nutrición.
 
-Responder únicamente al rol y al beneficio:
+Responder solo al rol y al beneficio:
 
 ```text
 Lo usaré yo para decidir qué comer sin tener que improvisar cada día.
 ```
 
-Comprobar que actualiza el borrador, conserva el resto pendiente y no repite lo
-resuelto. Si ofrece propuestas explícitas, responder «ok»: solo esas propuestas
-pueden pasar a confirmadas; preguntas sin respuesta siguen abiertas.
+Debe actualizar el documento, conservar el resto pendiente y no repetir lo resuelto. Si
+ofrece propuestas explícitas, responder «ok»: solo esas pasan a confirmadas.
 
-Mientras quede una decisión de negocio bloqueante, responder:
+Con una decisión bloqueante abierta, responder:
 
 ```text
 Suficiente por hoy, termina aunque falte concretar lo demás.
 ```
 
-Resultado a comprobar: mantiene el archivo `borrador-<nombre>.md` en estado
-`Pendiente de refinar`, identifica bloqueos y muestra el contenido completo en un
-único bloque Markdown. La orden de terminar no confirma propuestas.
-
-**Revisión de instrucciones:** cubierto por Inicio y reanudación, Rondas de
-refinamiento 1–4 y Preparación, pausa y entrega. **Ejecución real:** pendiente.
+**Resultado esperado:** el archivo `docs/stories/<nombre>.md` queda en estado
+`Pendiente de refinar`, con los bloqueos identificados, y el documento completo se
+muestra en un único bloque Markdown. La orden de terminar no confirma propuestas.
 
 ## 2. Historia demasiado grande
 
-Invocación:
-
 ```text
-/refinar-historia Como persona que cocina en casa, quiero planificar mis menús,
+/refine-feature Como persona que cocina en casa, quiero planificar mis menús,
 generar la lista de la compra, comprar en supermercados y compartir la planificación
 con mi familia, para ahorrar tiempo al organizar nuestras comidas.
 ```
 
-Comprobar que utiliza INVEST para detectar el tamaño y las dependencias, propone
-entregas con valor independiente y solicita confirmar la división. No debe crear
-varias historias automáticamente, inventar integración con supermercados ni
-diseñar pagos, endpoints o almacenamiento.
+Debe usar INVEST para detectar el tamaño, proponer entregas con valor independiente y
+pedir que se confirme la división. No debe crear historias que no se hayan confirmado, inventar una
+integración con supermercados ni diseñar pagos, endpoints o almacenamiento.
 
 Responder:
 
@@ -73,17 +71,12 @@ Responder:
 Empecemos solo por planificar un menú para mí. Dejamos compra y compartir fuera.
 ```
 
-Resultado a comprobar: refina esa entrega, conserva el objetivo confirmado y deja
-las otras capacidades fuera de alcance. Pide aclarar las reglas que sigan abiertas;
-no da por resueltas las dudas del menú por haber confirmado su división.
+**Resultado esperado:** refina solo esa entrega y deja las otras capacidades fuera de
+alcance. Sigue preguntando las reglas del menú que estén abiertas.
 
-**Revisión de instrucciones:** cubierto por Fuentes y alcance, Rondas 5–6 y la
-condición de preparación. **Ejecución real:** pendiente.
+## 3. Retomar y finalizar una historia
 
-## 3. Retomar un borrador y finalizar sin duplicados
-
-Crear en el checkout de prueba `docs/stories/borrador-consultar-menu.md` con este
-contenido aportado como datos del usuario para la prueba:
+Crear en el checkout de prueba `docs/stories/consultar-menu.md`:
 
 ```markdown
 # Consultar mi menú semanal
@@ -106,6 +99,8 @@ El menú ya está planificado. Necesito consultarlo para no improvisar.
 
 ## Criterios de aceptación
 
+### Camino feliz
+
 - Al consultar una semana con menú completo veo la comida prevista para cada día
   de lunes a domingo.
 
@@ -125,36 +120,24 @@ El menú ya está planificado. Necesito consultarlo para no improvisar.
 ## Dudas abiertas
 
 - Bloqueante: confirmar el comportamiento de los días sin comida y de una semana
-  sin menú. No quedan otras dudas de negocio en este escenario.
+  sin menú.
 ```
-
-Invocar:
 
 ```text
-/refinar-historia Retoma docs/stories/borrador-consultar-menu.md
+/refine-feature Retoma docs/stories/consultar-menu.md
 ```
 
-Comprobar que recupera las decisiones sin volver a preguntar rol, periodo o
-exclusiones, y presenta las propuestas aún pendientes. Responder «ok».
+Debe recuperar las decisiones sin volver a preguntar rol, periodo ni exclusiones, y
+presentar las propuestas pendientes. Responder «ok».
 
-Resultado a comprobar: incorpora P1 y P2 como reglas y criterios observables,
-elimina esas dudas, marca `Lista para planificación técnica` y renombra a
-`docs/stories/consultar-menu.md`. Solo debe quedar un documento vigente y su
-contenido debe coincidir con el bloque Markdown completo del chat.
+**Resultado esperado:** P1 y P2 pasan a ser reglas y criterios observables (en errores
+o casos límite), desaparecen esas dudas y el estado cambia a
+`Lista para planificación técnica` en el mismo archivo. No se crea ningún otro
+documento y el contenido coincide con el bloque Markdown del chat.
 
-Variantes a repetir por separado desde el borrador original:
+Variantes, repetidas por separado desde el documento original:
 
 - **Contradicción:** responder «También quiero ver el menú de la semana que viene».
   Debe aclarar el cambio de alcance antes de sustituir la decisión sobre el periodo.
-- **Colisión:** crear antes un `consultar-menu.md` que represente otra historia.
-  No debe sobrescribirlo al finalizar ni perder las decisiones del borrador.
-
-**Revisión de instrucciones:** cubierto por Inicio y reanudación 4–5, Rondas 3–4,
-Rondas 6 y las reglas de renombrado y entrega. **Ejecución real:** pendiente.
-
-## Comprobaciones comunes durante la sesión real
-
-Revisar las herramientas utilizadas: limitar las lecturas al documento seleccionado
-y a las instrucciones de la skill; no consultar código ni documentación de negocio
-para completar requisitos. Verificar el guardado tras cada ronda, el español en
-preguntas y documentos, y que no haya publicación externa ni diseño técnico.
+- **Nombre ocupado:** pedir una historia nueva cuyo nombre natural sea `consultar-menu`.
+  No debe sobrescribir el archivo existente y debe usar otro nombre.

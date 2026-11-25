@@ -1,4 +1,4 @@
-# 23 · Crear skill refinar-historia para Claude Code
+# 23 · Crear skill refine-feature para Claude Code
 
 **Issue:** [#23](https://github.com/juampiii/HappyMeal/issues/23)
 **Fecha del plan:** 2026-11-25
@@ -80,17 +80,27 @@ El plan original se conserva en los apartados anteriores.
 ### Resultado final
 
 Implementada el 2026-11-25 la skill compartida y su entrada para Claude Code. Se
-invoca desde `Happymeal-BE` con `/refinar-historia <idea>` o indicando el documento
+invoca desde `Happymeal-BE` con `/refine-feature <idea>` o indicando el documento
 que se quiere retomar. Guarda historias en `docs/stories/` desde la raíz Git.
 
 La skill incluye rondas de hasta cinco preguntas, confirmaciones parciales,
 tratamiento de contradicciones, revisión INVEST, pausa con bloqueos y entrega
-completa en Markdown. La conversión entre borrador e historia final mantiene un
-único documento vigente y comprueba colisiones antes de renombrar.
+completa en Markdown. Cada historia es un único archivo `<nombre>.md` y su avance
+se indica en el campo `Estado`.
 
 ### Cambios respecto al plan original
 
-Sin cambios de alcance. La revisión de escenarios es manual; la ejecución de
+Sin cambios de alcance. La skill se renombró de `refinar-historia` a `refine-feature`:
+la entrada es una idea de funcionalidad que debería acabar en una historia y, solo si
+es demasiado grande, en varias confirmadas por el usuario. Los apartados 1 a 5
+conservan el nombre original. En la revisión posterior se eliminó la conversión de
+`borrador-<nombre>.md` a `<nombre>.md` (paso 1): un solo archivo con campo `Estado`
+evita las comprobaciones de colisión y renombrado. También se añadieron a la
+plantilla los grupos de criterios camino feliz, errores y casos límite. Las
+instrucciones de la skill pasaron a inglés, como las del resto de skills; la
+conversación y la historia usan el idioma que pida el usuario o, si no pide
+ninguno, el que escriba. La revisión
+de escenarios es manual; la ejecución de
 conversaciones en Claude Code sigue pendiente por no disponer del ejecutable.
 
 ### Validación realizada
@@ -110,11 +120,11 @@ antes de dar por cerrada la validación funcional de la issue.
 
 ## 7. Referencia técnica final
 
-- [Instrucciones compartidas](../../../Happymeal-BE/skills/refinar-historia/SKILL.md).
-- [Entrada para Claude Code](../../../Happymeal-BE/.claude/skills/refinar-historia/SKILL.md).
+- [Instrucciones compartidas](../../../Happymeal-BE/skills/refine-feature/SKILL.md).
+- [Entrada para Claude Code](../../../Happymeal-BE/.claude/skills/refine-feature/SKILL.md).
 - [Índice de skills](../../../Happymeal-BE/skills/INDEX.md).
 - [Escenarios de validación](validacion.md).
 
 ## 8. Palabras clave
 
-Claude Code, refinar-historia, historias de usuario, INVEST, criterios de aceptación, borradores.
+Claude Code, refinar-historia, refine-feature, historias de usuario, INVEST, criterios de aceptación, borradores.
