@@ -14,8 +14,99 @@ La épica #33 cubre el recetario compartido inicial, el menú semanal, la lista 
 compra y la exportación de datos del hogar. MCP, búsqueda semántica/RAG, el reconocedor
 en Rust y Kubernetes/Terraform son ampliaciones posteriores fuera de esa épica.
 Sus historias iniciales son #34–#41 en Azure DevOps y se refinarán individualmente
-antes de la planificación técnica. El roadmap original que sigue se conserva como
-plan de partida.
+antes de la planificación técnica.
+
+## Revisión vigente · 2026-11-26
+
+**Estado:** Acordada. Esta revisión establece el alcance y el orden de entrega de
+la épica #33. El plan original del 2026-11-26 se conserva debajo como referencia
+histórica. Cuando difiera de esta revisión, prevalece esta revisión. Es una
+actualización de planificación; no se ha completado la implementación del producto
+ni la validación operativa.
+
+### Objetivo y alcance
+
+Entregar un recetario compartido, planificación semanal, lista de la compra y
+exportación de datos del hogar para el propietario y su pareja. Ambos usan español
+y acceden desde el móvil, también fuera de casa. Los datos pertenecen al hogar.
+
+La primera versión usable es el recetario. Se mantienen como dirección acordada
+el login con Google, la comprobación de acceso al hogar, una PWA con Angular,
+HTTPS y el alojamiento en el homelab. Los servicios separados de Recipes/hogar,
+MenuPlanning y ShoppingList y RabbitMQ siguen siendo decisiones técnicas del plan
+original; su trabajo habilitador se planifica aparte del refinamiento de negocio.
+El código y CI/CD permanecen en GitHub; la planificación de producto y el backlog,
+en Azure DevOps.
+
+### Bloques de entrega y resultados observables
+
+| Entrega | Historias iniciales | Resultado observable | Relación con el plan original |
+| --- | --- | --- | --- |
+| A · Usar el recetario compartido desde el móvil | #34 Gestionar recetas con ingredientes y detalles de preparación; #35 Acceder al recetario compartido del hogar; #36 Usar el recetario desde el móvil | Ambos miembros autorizados pueden gestionar recetas con ingredientes estructurados desde una PWA instalable por HTTPS, también fuera de casa. Hay copias programadas y una restauración probada antes de almacenar datos reales del hogar. | Pasos 1–3; se adelanta desde el paso 5 el trabajo inicial de copias y restauración. |
+| B · Introducir ingredientes en texto libre | #37 Introducir ingredientes en texto libre | El reconocimiento rellena los campos estructurados y el usuario puede corregir el resultado. El comportamiento detallado se confirma en el refinamiento. | Paso 4, después del primer recetario usable. |
+| C · Planificar el menú semanal desde el móvil | #38 Planificar el menú semanal | Los usuarios pueden planificar y modificar la semana desde la PWA según las reglas confirmadas de comidas y raciones. | Paso 7 más su pantalla de menú del paso 9. El despliegue y la mensajería de los pasos 5–6 habilitan esta entrega. |
+| D · Generar y gestionar la lista de la compra desde el móvil | #39 Generar la lista de la compra desde el menú semanal; #40 Gestionar la lista de la compra del hogar | Los usuarios pueden obtener la lista desde el menú, añadir ítems manuales y marcar productos comprados desde la PWA, según las reglas confirmadas en el refinamiento. | Paso 8 más su pantalla de compra del paso 9. |
+| E · Exportar datos del hogar y aprender del uso real | #41 Exportar datos del hogar | La exportación se verifica según el contenido y formato confirmados. De dos a tres semanas de uso real producen un backlog escrito de problemas y capacidades que faltan. | Paso 10; no depende de MCP ni del trabajo posterior de IA. |
+
+```mermaid
+flowchart TD
+    A["A. Recetario compartido desde el móvil"] --> B["B. Ingredientes en texto libre"]
+    A --> T["Trabajo habilitador: despliegue y mensajería entre servicios"]
+    T --> C["C. Menú semanal desde el móvil"]
+    B --> D["D. Lista de la compra desde el móvil"]
+    C --> D
+    D --> E["E. Exportación y feedback del uso real"]
+```
+
+Los bloques agrupan el refinamiento y la entrega; cada historia se refina de forma
+individual y puede dividirse en historias con valor independiente cuando se acuerde.
+Las pantallas de menú y compra se entregan con sus respectivas capacidades.
+Completar la PWA y validar el uso real no esperan a un servidor MCP.
+
+### Trabajo habilitador y ampliaciones posteriores
+
+- Las copias programadas y una restauración probada se adelantan a la entrega A.
+  El paso 5 las amplía después a las bases de datos de todos los servicios y a
+  los escenarios de fallo del despliegue.
+- El despliegue de servicios y la mensajería fiable siguen siendo trabajo
+  habilitador previo a los servicios de menú y compra. Sus elementos de backlog
+  y sus planes técnicos siguen pendientes.
+- La observabilidad se separa de Kubernetes/Terraform. Su trabajo puede acompañar
+  a la integración de servicios; el clúster local es una ampliación de aprendizaje
+  posterior.
+- MCP, búsqueda semántica/RAG, el reconocedor en Rust y Kubernetes/Terraform quedan
+  fuera de la épica #33 y no condicionan su cierre. Al refinar la búsqueda habrá
+  que distinguir la recuperación de recetas de cualquier respuesta generada.
+- La importación de recetas desde URLs, texto pegado y fotos sigue como candidata
+  futura de backlog con su propio refinamiento. El plan original recoge una
+  dirección propuesta, no otra entrega necesaria para cerrar la épica #33.
+- El alta general de varios hogares y una interfaz multilingüe siguen fuera del
+  alcance inicial. La documentación y los ADRs evolucionan junto al trabajo.
+
+### Reglas de negocio y cierre
+
+Las historias #34–#41 establecen por ahora títulos y capacidades, no reglas de
+negocio definitivas. Los campos obligatorios de las recetas, las comidas del menú,
+el cálculo de raciones, los cambios y borrados de recetas, el recálculo de la lista,
+la conservación de marcas de comprado y el contenido y formato de exportación
+siguen pendientes de confirmar con `refine-feature`. Los ejemplos concretos y
+criterios de aceptación de negocio del plan histórico son entradas al refinamiento,
+no reglas confirmadas cuando esas decisiones sigan abiertas. Una historia solo
+estará lista para la planificación técnica al resolver sus decisiones de negocio
+bloqueantes.
+
+La épica #33 termina cuando ambos miembros autorizados pueden usar el flujo de
+recetas, menú y compra desde el móvil fuera de casa, se aplica el control de acceso
+al hogar, las historias incluidas cumplen sus criterios acordados, se han verificado
+la exportación y la restauración y se recoge feedback del uso real. La configuración
+de autenticación y del nombre público, la ubicación del frontend y los detalles de
+integración entre servicios siguen como temas de planificación técnica. La épica y
+esta revisión comparten ese límite de cierre.
+
+## Referencia histórica · Plan original del 2026-11-26
+
+Los apartados siguientes conservan las decisiones, los pasos, el diagrama y los
+criterios originales. Se leen junto a la revisión vigente anterior, que prevalece.
 
 ## 1. Objetivo
 

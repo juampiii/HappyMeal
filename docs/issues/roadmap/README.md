@@ -13,8 +13,91 @@ This roadmap covers the broader product and learning journey. Epic #33 covers th
 initial shared recipe book, weekly menu, shopping list and household data export.
 MCP, semantic search/RAG, the Rust recognizer and Kubernetes/Terraform are later
 extensions outside that epic. Its initial stories are #34–#41 in Azure DevOps and
-will be refined individually before technical planning. The original roadmap below
-is preserved as the starting plan.
+will be refined individually before technical planning.
+
+## Current revision · 2026-11-26
+
+**Status:** Agreed. This revision governs the scope and delivery order for epic #33.
+The original plan dated 2026-11-26 is preserved below as a historical baseline.
+Where it differs from this revision, this revision takes precedence. This is a
+planning update; no product implementation or operational validation is complete.
+
+### Objective and scope
+
+Deliver a shared recipe book, weekly meal planning, a shopping list and household
+data export for the owner and their partner. Both use Spanish and access the app
+from their phones, including outside the home. Data belongs to the household.
+
+The first usable release is the recipe book. Google sign-in, household access
+checks, an Angular PWA, HTTPS and homelab hosting remain the agreed direction.
+The separate Recipes/household, MenuPlanning and ShoppingList services and RabbitMQ
+remain technical decisions from the baseline; their enabling work is planned
+separately from business refinement. Source code and CI/CD stay in GitHub; product
+planning and backlog stay in Azure DevOps.
+
+### Delivery blocks and observable outcomes
+
+| Delivery | Initial stories | Observable outcome | Baseline relationship |
+| --- | --- | --- | --- |
+| A · Use the shared recipe book from a phone | #34 Manage recipes with ingredients and cooking details; #35 Access the shared household recipe book; #36 Use the recipe book from a mobile phone | Both authorized members can manage recipes with structured ingredients through an installable PWA over HTTPS, including outside the home. Scheduled backups and a tested restoration are available before real household data is stored. | Steps 1–3; move the initial backup and restore work forward from step 5. |
+| B · Enter ingredients as free text | #37 Enter ingredients as free text | Recognition fills structured fields and the user can correct the result. Detailed behavior is confirmed in refinement. | Step 4, after the first usable recipe book. |
+| C · Plan the weekly menu from a phone | #38 Plan the weekly menu | Users can plan and change the week through the PWA according to the confirmed meal and serving rules. | Step 7 plus its menu screen from step 9. Service deployment and messaging from steps 5–6 enable this delivery. |
+| D · Generate and manage the shopping list from a phone | #39 Generate a shopping list from the weekly menu; #40 Manage the household shopping list | Users can obtain the list from their menu, add manual items and mark products as bought through the PWA, under the rules confirmed in refinement. | Step 8 plus its shopping screen from step 9. |
+| E · Export household data and learn from real use | #41 Export household data | Export is verified against the confirmed content and format. Two to three weeks of real use produce a recorded backlog of problems and missing capabilities. | Step 10; it does not depend on MCP or later AI work. |
+
+```mermaid
+flowchart TD
+    A["A. Shared recipe book on a phone"] --> B["B. Free-text ingredients"]
+    A --> T["Enabling work: service deployment and messaging"]
+    T --> C["C. Weekly menu on a phone"]
+    B --> D["D. Shopping list on a phone"]
+    C --> D
+    D --> E["E. Export and feedback from real use"]
+```
+
+The blocks group refinement and delivery; each story is refined individually and
+may be split into independently valuable stories when agreed. Menu and shopping
+screens ship with their respective capabilities. Completing the PWA and validating
+real use do not wait for an MCP server.
+
+### Enabling work and later extensions
+
+- Scheduled backups and a tested restoration move to delivery A. Step 5 later
+  extends them to every service database and its deployment failure scenarios.
+- Service deployment and reliable messaging remain enabling work before the menu
+  and shopping services. Their backlog items and technical plans are still pending.
+- Observability is separate from Kubernetes/Terraform. Its work can accompany the
+  service integration; a local cluster is a later learning extension.
+- MCP, semantic search/RAG, the Rust recognizer and Kubernetes/Terraform are outside
+  epic #33 and are not completion dependencies. Semantic recipe retrieval and any
+  generated answer must be distinguished when the search work is refined.
+- Recipe import from URLs, pasted text and photos remains a future backlog
+  candidate with its own refinement. The baseline records a proposed direction,
+  not an additional delivery required to close epic #33.
+- General multi-household onboarding and a multilingual UI remain outside the
+  initial scope. Documentation and ADRs evolve alongside the work.
+
+### Business rules and completion
+
+Stories #34–#41 currently establish titles and capabilities, not finalized business
+rules. Recipe field requirements, meal slots, serving calculations, recipe changes
+and deletions, shopping-list recalculation, preservation of bought marks and export
+content and format remain to be confirmed with `refine-feature`. Specific examples
+and business acceptance criteria in the historical baseline are refinement inputs,
+not confirmed rules where those decisions remain open. A story is ready for
+technical planning only after its blocking business decisions are resolved.
+
+Epic #33 is complete when both authorized members can use the recipe-to-menu-to-
+shopping flow from their phones outside the home, household access is enforced,
+the included stories satisfy their agreed criteria, export and restoration have
+been verified, and feedback from real use is recorded. Authentication and hostname
+configuration, frontend location and service integration details remain technical
+planning topics. The epic and this revision share that completion boundary.
+
+## Historical baseline · Original plan dated 2026-11-26
+
+The following sections preserve the original decisions, steps, diagram and criteria.
+They are read together with the current revision above, which takes precedence.
 
 ## 1. Objective
 
