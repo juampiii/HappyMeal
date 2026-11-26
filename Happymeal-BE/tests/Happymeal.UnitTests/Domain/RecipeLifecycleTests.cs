@@ -1,78 +1,120 @@
-using Happymeal.Domain;
-using Happymeal.Domain.Params;
-using Happymeal.Domain.Events;
 using Happymeal.Common.Results;
+using Happymeal.Domain;
+using Happymeal.Domain.Events;
+using Happymeal.Domain.Params;
+
 namespace Happymeal.UnitTests.Domain;
+
 public class RecipeLifecycleTests
 {
-    private static Recipe Complete() => Recipe.Create(Guid.NewGuid(), new RecipeParams("Tortilla", Ingredients: [new("Sal", 0.5m, "cucharada")], Steps: ["Mezclar", "Cocinar"])).Value;
     [Fact]
-    public void Publish_WhenIncomplete_ShouldKeepDraftAndNotEmitEvent()
+    public void Publish_WhenDraftIsIncomplete_ShouldKeepDraftAndNotRaiseEvents()
     {
+        // Arrange
         var recipe = Recipe.Create(Guid.NewGuid(), new RecipeParams("Tortilla")).Value;
         recipe.PullDomainEvents();
-        recipe.Publish().Error!.Type.Should().Be(ErrorType.Validation);
+
+        // Act
+        var result = recipe.Publish();
+
+        // Assert
+        result.Error!.Type.Should().Be(ErrorType.Validation);
         recipe.IsPublished.Should().BeFalse();
         recipe.GetDomainEvents().Should().BeEmpty();
     }
+
     [Fact]
-    public void Publish_WhenRepeated_ShouldFreezeContentAndEmitOnlyOneEvent()
+    public void Publish_WhenCalledTwice_ShouldRaiseOnlyOnePublicationEvent()
     {
-        var recipe = Complete();
+        // Arrange
+        var recipe = CreateCompleteDraft();
         recipe.PullDomainEvents();
-        recipe.Publish().IsSuccess.Should().BeTrue();
-        recipe.Publish().IsSuccess.Should().BeTrue();
-        recipe.Update(new RecipeParams("Changed")).Error!.Type.Should().Be(ErrorType.Conflict);
-        recipe.Name.Should().Be("Tortilla");
-        recipe.GetDomainEvents().Should().ContainSingle().Which.Should().BeOfType<RecipePublishedDomainEvent>();
+
+        // Act
+        var firstPublication = recipe.Publish();
+        var repeatedPublication = recipe.Publish();
+
+        // Assert
+        firstPublication.IsSuccess.Should().BeTrue();
+        repeatedPublication.IsSuccess.Should().BeTrue();
+        recipe.IsPublished.Should().BeTrue();
         recipe.Version.Should().Be(1);
+        recipe.GetDomainEvents().Should().ContainSingle()
+            .Which.Should().BeOfType<RecipePublishedDomainEvent>();
     }
+
     [Fact]
-    public void Hide_WhenRepeated_ShouldPreservePublishedContentAndEmitOnlyOneEvent()
+    public void Update_WhenRecipeIsPublished_ShouldRejectChangesAndKeepContent()
     {
-        var recipe = Complete();
+        // Arrange
+        var recipe = CreateCompleteDraft();
         recipe.Publish();
         recipe.PullDomainEvents();
-        recipe.Hide();
-        recipe.Hide();
+        var changedContent = new RecipeParams("Changed recipe");
+
+        // Act
+        var result = recipe.Update(changedContent);
+
+        // Assert
+        result.Error!.Type.Should().Be(ErrorType.Conflict);
+        recipe.Name.Should().Be("Tortilla");
+        recipe.Ingredients.Single().Name.Should().Be("Sal");
+        recipe.Steps.Should().Equal("Mezclar", "Cocinar");
+        recipe.GetDomainEvents().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Hide_WhenCalledTwice_ShouldKeepPublishedContentAndRaiseOnlyOneEvent()
+    {
+        // Arrange
+        var recipe = CreateCompleteDraft();
+        recipe.Publish();
+        recipe.PullDomainEvents();
+
+        // Act
+        var firstHide = recipe.Hide();
+        var repeatedHide = recipe.Hide();
+
+        // Assert
+        firstHide.IsSuccess.Should().BeTrue();
+        repeatedHide.IsSuccess.Should().BeTrue();
         recipe.IsHidden.Should().BeTrue();
         recipe.IsPublished.Should().BeTrue();
-        recipe.Ingredients.Should().ContainSingle();
+        recipe.Ingredients.Single().Quantity.Should().Be(0.5m);
         recipe.Steps.Should().Equal("Mezclar", "Cocinar");
-        recipe.GetDomainEvents().Should().ContainSingle().Which.Should().BeOfType<RecipeHiddenDomainEvent>();
+        recipe.GetDomainEvents().Should().ContainSingle()
+            .Which.Should().BeOfType<RecipeHiddenDomainEvent>();
     }
+
     [Fact]
-    public void Update_WhenIngredientsRepeat_ShouldKeepContentAndEventsUnchanged()
+    public void Update_WhenIngredientsRepeat_ShouldKeepContentAndNotRaiseEvents()
     {
-        var recipe = Complete();
+        // Arrange
+        var recipe = CreateCompleteDraft();
         recipe.PullDomainEvents();
-        recipe.Update(new RecipeParams("Other", Ingredients: [new(" SAL "), new("s\u00e1l")], Steps: ["Other"])).IsFailure.Should().BeTrue();
+        var repeatedIngredientContent = new RecipeParams(
+            Name: "Other recipe",
+            Ingredients: [new(" SAL "), new("sál")],
+            Steps: ["Different preparation"]);
+
+        // Act
+        var result = recipe.Update(repeatedIngredientContent);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
         recipe.Name.Should().Be("Tortilla");
         recipe.Ingredients.Single().Quantity.Should().Be(0.5m);
         recipe.Steps.Should().Equal("Mezclar", "Cocinar");
         recipe.GetDomainEvents().Should().BeEmpty();
     }
-    [Theory]
-    [InlineData(" T\u00d3RTILLA ", "tortilla")]
-    [InlineData("pingu\u0308ino", "PING\u00dcINO")]
-    public void Key_WhenNamesDifferOnlyByConfirmedRules_ShouldCompareEqual(string first,string second)
-        => RecipeName.Key(first).Should().Be(RecipeName.Key(second));
-    [Theory]
-    [InlineData("g", 0, false)]
-    [InlineData("kg", -1, false)]
-    [InlineData("unknown", 1, false)]
-    [InlineData("cucharada", 1.5, true)]
-    [InlineData(null, 1, true)]
-    public void Validate_WhenQuantityOrUnitIsProvided_ShouldApplyConfirmedRules(string? unit, double quantity, bool valid)
-    {
-        var parameters = new RecipeParams("Soup", Ingredients: [new("Salt", (decimal)quantity, unit)]);
-        parameters.Validate().Any().Should().Be(!valid);
-    }
 
-    [Fact]
-    public void Validate_WhenServingsOrMinutesAreNotPositive_ShouldReportBothFields()
+    private static Recipe CreateCompleteDraft()
     {
-        var parameters = new RecipeParams("Soup", Servings: 0, PreparationMinutes: -1);
-        parameters.Validate().Select(x => x.PropertyName).Should().BeEquivalentTo(["Servings", "PreparationMinutes"]);
+        var content = new RecipeParams(
+            Name: "Tortilla",
+            Ingredients: [new("Sal", 0.5m, "cucharada")],
+            Steps: ["Mezclar", "Cocinar"]);
+
+        return Recipe.Create(Guid.NewGuid(), content).Value;
     }
 }

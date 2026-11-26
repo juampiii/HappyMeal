@@ -30,6 +30,9 @@ Feature branches use `feature/<issue>-<description>` (for example: `feature/14-a
 
 - When a parameter declaration spans multiple lines, start the parameters on the
   line after the opening parenthesis and place one parameter per line.
+- Keep tests readable: use descriptive setup/response variables, separate Arrange,
+  Act and Assert, and give each test one main behavior. Keep validation tests in
+  params test classes rather than mixing them into lifecycle tests.
 - Always use braces for every C# `if` and `else` body, including single statements.
 - For nontrivial params validation, prefer small private methods named after the
   rules they validate, composed with `Concat` in `Validate()` to collect all errors.
