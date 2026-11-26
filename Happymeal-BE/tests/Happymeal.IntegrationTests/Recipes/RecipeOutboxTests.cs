@@ -94,7 +94,7 @@ public class RecipeOutboxTests(HappymealApiFactory factory) : TestBase(factory)
     }
 
     [Fact]
-    public async Task DeleteAsync_WhenRecipeExists_ShouldStageRecipeDeletedMessageInOutbox()
+    public async Task HideAsync_WhenRecipeExists_ShouldStageRecipeHiddenMessageInOutbox()
     {
         // Arrange
         var recipe = Recipe.Create(Guid.CreateVersion7(), new RecipeParams("Burger", null)).Value;
@@ -106,6 +106,6 @@ public class RecipeOutboxTests(HappymealApiFactory factory) : TestBase(factory)
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         var messages = await GetOutboxMessagesAsync();
-        messages.Should().ContainSingle(m => m.Type == typeof(RecipeDeletedDomainEvent).FullName);
+        messages.Should().ContainSingle(m => m.Type == typeof(RecipeHiddenDomainEvent).FullName);
     }
 }

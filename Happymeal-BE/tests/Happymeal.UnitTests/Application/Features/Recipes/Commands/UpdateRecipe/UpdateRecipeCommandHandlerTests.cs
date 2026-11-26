@@ -15,6 +15,7 @@ public class UpdateRecipeCommandHandlerTests
     public UpdateRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
         _sut = new UpdateRecipeFeature.Handler(_unitOfWork);
     }
 
@@ -41,7 +42,7 @@ public class UpdateRecipeCommandHandlerTests
         result.Value.Description.Should().Be("Big");
         recipe.Name.Should().Be("Burger XL");
         recipe.GetDomainEvents().Should().ContainSingle().Which.Should().BeOfType<RecipeUpdatedDomainEvent>();
-        await _unitOfWork.Received(1).SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public class UpdateRecipeCommandHandlerTests
         // Assert
         result.IsFailure.Should().BeTrue();
         result.Error!.Type.Should().Be(ErrorType.NotFound);
-        await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -76,6 +77,6 @@ public class UpdateRecipeCommandHandlerTests
         result.Error.ValidationErrors.Should().ContainKey(nameof(RecipeParams.Name));
         recipe.Name.Should().Be("Burger");
         recipe.GetDomainEvents().Should().BeEmpty();
-        await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 }

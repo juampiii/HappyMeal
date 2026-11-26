@@ -1,3 +1,6 @@
+using Happymeal.Common.Results;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Domain.Base;
 using Happymeal.Infrastructure.Database;
@@ -19,8 +22,33 @@ internal sealed class UnitOfWork(
         return await dbContext.SaveChangesAsync(cancellationToken) > 0;
     }
 
+    public async Task<Result<bool>> TrySaveEntitiesAsync(CancellationToken cancellationToken = default)
+    {
+        try { return Result.Success(await SaveEntitiesAsync(cancellationToken)); }
+        catch (DbUpdateConcurrencyException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return Error.Conflict("Recipe changed concurrently. Reload it and try again.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            dbContext.ChangeTracker.Clear();
+            return Error.Conflict("Recipe name or id already exists.");
+        }
+    }
+
     private void StageDomainEvents()
     {
+        // An owned-ingredient-only edit must also update the root so xmin protects
+        // the complete aggregate against a concurrent publication.
+        foreach (var entry in dbContext.ChangeTracker.Entries<AggregateRoot>())
+        {
+            if (entry.State == EntityState.Unchanged && entry.Entity.GetDomainEvents().Count != 0)
+            {
+                entry.State = EntityState.Modified;
+            }
+        }
+
         var domainEvents = dbContext.ChangeTracker
             .Entries<AggregateRoot>()
             .SelectMany(e => e.Entity.PullDomainEvents())

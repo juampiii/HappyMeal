@@ -40,6 +40,12 @@ namespace Happymeal.Infrastructure.Database.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -52,7 +58,37 @@ namespace Happymeal.Infrastructure.Database.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("NameKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PreparationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Revision")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int?>("Servings")
+                        .HasColumnType("integer");
+
+                    b.Property<string[]>("Steps")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string[]>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("NameKey")
+                        .IsUnique();
 
                     b.ToTable("Recipes", "Happymeal");
                 });
@@ -99,6 +135,37 @@ namespace Happymeal.Infrastructure.Database.Migrations
                         .HasFilter("\"ProcessedOn\" IS NULL");
 
                     b.ToTable("OutboxMessages", "Happymeal");
+                });
+
+            modelBuilder.Entity("Happymeal.Domain.Recipe", b =>
+                {
+                    b.OwnsMany("Happymeal.Domain.RecipeIngredient", "Ingredients", b1 =>
+                        {
+                            b1.Property<Guid>("RecipeId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("Position")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<decimal?>("Quantity")
+                                .HasColumnType("numeric");
+
+                            b1.Property<string>("Unit")
+                                .HasColumnType("text");
+
+                            b1.HasKey("RecipeId", "Position");
+
+                            b1.ToTable("RecipeIngredients", "Happymeal");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RecipeId");
+                        });
+
+                    b.Navigation("Ingredients");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,7 +9,9 @@ namespace Happymeal.Application.Features.Recipes.Commands.CreateRecipe;
 public static class CreateRecipeFeature
 {
     /// <param name="Id">Optional id chosen by the client. The handler generates one when it is null.</param>
-    public sealed record Command(Guid? Id, string Name, string? Description) : ICommand<RecipeDto>;
+    public sealed record Command(Guid? Id, string Name, string? Description = null,
+    IReadOnlyList<IngredientParams>? Ingredients = null, IReadOnlyList<string>? Steps = null,
+    int? Servings = null, int? PreparationMinutes = null, IReadOnlyList<string>? Tags = null) : ICommand<RecipeDto>;
 
     public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command, RecipeDto>
     {
@@ -19,22 +21,29 @@ public static class CreateRecipeFeature
         {
             var id = command.Id ?? Guid.CreateVersion7();
 
-            var createResult = Recipe.Create(id, new RecipeParams(command.Name, command.Description));
+            var createResult = Recipe.Create(id, new RecipeParams(command.Name, command.Description, command.Ingredients, command.Steps, command.Servings, command.PreparationMinutes, command.Tags));
             if (createResult.IsFailure)
             {
                 return createResult.Error!;
             }
 
-            // TODO: two concurrent requests with the same id can both pass this check; the second one fails on the primary key.
             if (await unitOfWork.RecipeRepository.ExistsAsync(id, cancellationToken))
             {
                 return Error.Conflict($"Recipe {id} already exists.");
             }
 
+            if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id ?? id, cancellationToken))
+                return Error.Conflict("Recipe name already exists.");
+
             var recipe = createResult.Value;
             unitOfWork.RecipeRepository.Add(recipe);
 
-            var wasSaved = await unitOfWork.SaveEntitiesAsync(cancellationToken);
+            var saved = await unitOfWork.TrySaveEntitiesAsync(cancellationToken);
+            if (saved.IsFailure)
+            {
+                return saved.Error!;
+            }
+            var wasSaved = saved.Value;
             return !wasSaved
                 ? Error.Failure("Recipe could not be persisted.")
                 : Result.Success(RecipeDto.From(recipe));

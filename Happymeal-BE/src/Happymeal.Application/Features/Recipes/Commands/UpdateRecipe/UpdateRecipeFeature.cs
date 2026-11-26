@@ -1,3 +1,4 @@
+using Happymeal.Domain;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Common.Results;
@@ -7,7 +8,9 @@ namespace Happymeal.Application.Features.Recipes.Commands.UpdateRecipe;
 
 public static class UpdateRecipeFeature
 {
-    public sealed record Command(Guid Id, string Name, string? Description) : ICommand<RecipeDto>;
+    public sealed record Command(Guid Id, string Name, string? Description = null,
+    IReadOnlyList<IngredientParams>? Ingredients = null, IReadOnlyList<string>? Steps = null,
+    int? Servings = null, int? PreparationMinutes = null, IReadOnlyList<string>? Tags = null) : ICommand<RecipeDto>;
 
     public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command, RecipeDto>
     {
@@ -21,13 +24,24 @@ public static class UpdateRecipeFeature
                 return Error.NotFound($"Recipe {command.Id} was not found.");
             }
 
-            var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description));
+            if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id, cancellationToken))
+                return Error.Conflict("Recipe name already exists.");
+
+            var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description, command.Ingredients, command.Steps, command.Servings, command.PreparationMinutes, command.Tags));
             if (updateResult.IsFailure)
             {
                 return updateResult.Error!;
             }
 
-            await unitOfWork.SaveEntitiesAsync(cancellationToken);
+            var saved = await unitOfWork.TrySaveEntitiesAsync(cancellationToken);
+            if (saved.IsFailure)
+            {
+                return saved.Error!;
+            }
+            if (!saved.Value)
+            {
+                return Error.Failure("Recipe could not be persisted.");
+            }
             return Result.Success(RecipeDto.From(recipe));
         }
     }

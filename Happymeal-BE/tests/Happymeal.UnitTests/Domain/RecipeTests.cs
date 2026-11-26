@@ -120,17 +120,17 @@ public class RecipeTests
     }
 
     [Fact]
-    public void MarkAsDeleted_ShouldRaiseRecipeDeletedDomainEvent()
+    public void Hide_ShouldRaiseRecipeHiddenDomainEvent()
     {
         // Arrange
         var recipe = CreateRecipe();
 
         // Act
-        recipe.MarkAsDeleted();
+        recipe.Hide();
 
         // Assert
         recipe.GetDomainEvents().Should().ContainSingle()
-            .Which.Should().BeOfType<RecipeDeletedDomainEvent>()
+            .Which.Should().BeOfType<RecipeHiddenDomainEvent>()
             .Which.RecipeId.Should().Be(recipe.Id);
     }
 }

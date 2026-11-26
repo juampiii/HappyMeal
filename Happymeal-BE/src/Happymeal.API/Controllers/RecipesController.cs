@@ -1,9 +1,10 @@
+using Happymeal.Application.Features.Recipes.Commands.PublishRecipe;
 using Happymeal.API.Dtos;
 using Happymeal.API.Extensions;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Application.Features.Recipes;
 using Happymeal.Application.Features.Recipes.Commands.CreateRecipe;
-using Happymeal.Application.Features.Recipes.Commands.DeleteRecipe;
+using Happymeal.Application.Features.Recipes.Commands.HideRecipe;
 using Happymeal.Application.Features.Recipes.Commands.UpdateRecipe;
 using Happymeal.Application.Features.Recipes.Queries.GetRecipeById;
 using Happymeal.Application.Features.Recipes.Queries.GetRecipes;
@@ -42,7 +43,7 @@ public sealed class RecipesController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.SendAsync(
-            new CreateRecipeFeature.Command(request.Id, request.Name, request.Description), cancellationToken);
+            new CreateRecipeFeature.Command(request.Id, request.Name, request.Description, request.Ingredients, request.Steps, request.Servings, request.PreparationMinutes, request.Tags), cancellationToken);
 
         return this.ToActionResult(result, dto => CreatedAtAction(nameof(GetByIdAsync), new { id = dto.Id }, dto));
     }
@@ -57,17 +58,26 @@ public sealed class RecipesController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.SendAsync(
-            new UpdateRecipeFeature.Command(id, request.Name, request.Description), cancellationToken);
+            new UpdateRecipeFeature.Command(id, request.Name, request.Description, request.Ingredients, request.Steps, request.Servings, request.PreparationMinutes, request.Tags), cancellationToken);
 
         return this.ToActionResult(result);
     }
 
+    [HttpPost("{id:guid}/publish")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> PublishAsync(Guid id, CancellationToken cancellationToken)
+        => this.ToActionResult(await sender.SendAsync(new PublishRecipeFeature.Command(id), cancellationToken));
+
+    /// <summary>Logically deletes a recipe: hides it from listings while preserving detail references.</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> HideAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(new DeleteRecipeFeature.Command(id), cancellationToken);
+        var result = await sender.SendAsync(new HideRecipeFeature.Command(id), cancellationToken);
         return this.ToActionResult(result);
     }
 }

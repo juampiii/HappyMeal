@@ -1,13 +1,11 @@
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Common.Results;
+namespace Happymeal.Application.Features.Recipes.Commands.HideRecipe;
 
-namespace Happymeal.Application.Features.Recipes.Commands.DeleteRecipe;
-
-public static class DeleteRecipeFeature
+public static class HideRecipeFeature
 {
     public sealed record Command(Guid Id) : ICommand;
-
     public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command>
     {
         public async Task<Result> HandleAsync(Command command, CancellationToken cancellationToken = default)
@@ -17,14 +15,21 @@ public static class DeleteRecipeFeature
             {
                 return Error.NotFound($"Recipe {command.Id} was not found.");
             }
-
-            recipe.MarkAsDeleted();
-            unitOfWork.RecipeRepository.Delete(recipe);
-
-            var wasSaved = await unitOfWork.SaveEntitiesAsync(cancellationToken);
-            return !wasSaved
-                ? Error.Failure("Recipe could not be deleted.")
-                : Result.Success();
+            if (recipe.IsHidden)
+            {
+                return Result.Success();
+            }
+            var result = recipe.Hide();
+            if (result.IsFailure)
+            {
+                return result;
+            }
+            var saved = await unitOfWork.TrySaveEntitiesAsync(cancellationToken);
+            if (saved.IsFailure)
+            {
+                return saved.Error!;
+            }
+            return saved.Value ? Result.Success() : Error.Failure("Recipe could not be persisted.");
         }
     }
 }

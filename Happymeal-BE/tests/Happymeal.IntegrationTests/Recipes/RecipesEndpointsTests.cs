@@ -111,7 +111,8 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var dto = await response.Content.ReadFromJsonAsync<RecipeDto>(CancellationToken);
-        dto.Should().Be(new RecipeDto(recipe.Id, "Burger", "With fries"));
+        dto!.Name.Should().Be("Burger");
+        dto.Description.Should().Be("With fries");
     }
 
     [Fact]
@@ -175,7 +176,8 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var dto = await response.Content.ReadFromJsonAsync<RecipeDto>(CancellationToken);
-        dto.Should().Be(new RecipeDto(recipe.Id, "Burger XL", "Big"));
+        dto!.Name.Should().Be("Burger XL");
+        dto.Description.Should().Be("Big");
 
         var stored = await QueryAsync(db => db.Recipes.AsNoTracking().SingleAsync(CancellationToken));
         stored.Name.Should().Be("Burger XL");
@@ -216,7 +218,7 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
     }
 
     [Fact]
-    public async Task DeleteAsync_WhenRecipeExists_ShouldReturnNoContentAndRemoveRecipe()
+    public async Task HideAsync_WhenRecipeExists_ShouldReturnNoContentAndPreserveRecipe()
     {
         // Arrange
         var recipe = await SeedRecipeAsync();
@@ -227,7 +229,9 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         var exists = await QueryAsync(db => db.Recipes.AnyAsync(r => r.Id == recipe.Id, CancellationToken));
-        exists.Should().BeFalse();
+        exists.Should().BeTrue();
+        var hidden = await QueryAsync(db => db.Recipes.SingleAsync(r => r.Id == recipe.Id, CancellationToken));
+        hidden.IsHidden.Should().BeTrue();
     }
 
     [Fact]
