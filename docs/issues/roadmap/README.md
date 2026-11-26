@@ -17,6 +17,11 @@ will be refined individually before technical planning.
 
 ## Current revision · 2026-11-26
 
+The technical planning skill is now named `plan-feature` (formerly
+`issue-planning`); business refinement continues to use `refine-feature`.
+References to the old skill name in the historical baseline retain that name as
+part of the original plan.
+
 **Status:** Agreed. This revision governs the scope and delivery order for epic #33.
 The original plan dated 2026-11-26 is preserved below as a historical baseline.
 Where it differs from this revision, this revision takes precedence. This is a

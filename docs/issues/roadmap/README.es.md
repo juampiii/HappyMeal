@@ -18,6 +18,11 @@ antes de la planificación técnica.
 
 ## Revisión vigente · 2026-11-26
 
+La skill de planificación técnica pasa a llamarse `plan-feature` (antes
+`issue-planning`); el refinamiento de negocio sigue usando `refine-feature`.
+Las referencias al nombre anterior en el plan histórico conservan ese nombre
+como parte del plan original.
+
 **Estado:** Acordada. Esta revisión establece el alcance y el orden de entrega de
 la épica #33. El plan original del 2026-11-26 se conserva debajo como referencia
 histórica. Cuando difiera de esta revisión, prevalece esta revisión. Es una

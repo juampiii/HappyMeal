@@ -9,4 +9,4 @@ the project's Git root, not from this entry's directory.
 
 | File | When to read it |
 | --- | --- |
-| [Shared skill](../../../skills/refine-feature/SKILL.md) | Whenever this skill is invoked. |
+| [Shared skill](../../../../../AITools/skills/planning/refine-feature/SKILL.md) | Whenever this skill is invoked. |
