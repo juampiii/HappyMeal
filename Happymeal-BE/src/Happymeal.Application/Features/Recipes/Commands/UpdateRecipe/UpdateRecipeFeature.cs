@@ -8,9 +8,15 @@ namespace Happymeal.Application.Features.Recipes.Commands.UpdateRecipe;
 
 public static class UpdateRecipeFeature
 {
-    public sealed record Command(Guid Id, string Name, string? Description = null,
-    IReadOnlyList<IngredientParams>? Ingredients = null, IReadOnlyList<string>? Steps = null,
-    int? Servings = null, int? PreparationMinutes = null, IReadOnlyList<string>? Tags = null) : ICommand<RecipeDto>;
+    public sealed record Command(
+        Guid Id,
+        string Name,
+        string? Description = null,
+        IReadOnlyList<IngredientParams>? Ingredients = null,
+        IReadOnlyList<string>? Steps = null,
+        int? Servings = null,
+        int? PreparationMinutes = null,
+        IReadOnlyList<string>? Tags = null) : ICommand<RecipeDto>;
 
     public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command, RecipeDto>
     {

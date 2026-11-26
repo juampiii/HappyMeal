@@ -4,9 +4,14 @@ namespace Happymeal.Domain.Params;
 
 public sealed record IngredientParams(string Name, decimal? Quantity = null, string? Unit = null);
 
-public sealed record RecipeParams(string Name, string? Description = null,
-    IReadOnlyList<IngredientParams>? Ingredients = null, IReadOnlyList<string>? Steps = null,
-    int? Servings = null, int? PreparationMinutes = null, IReadOnlyList<string>? Tags = null) : IValidatable
+public sealed record RecipeParams(
+    string Name,
+    string? Description = null,
+    IReadOnlyList<IngredientParams>? Ingredients = null,
+    IReadOnlyList<string>? Steps = null,
+    int? Servings = null,
+    int? PreparationMinutes = null,
+    IReadOnlyList<string>? Tags = null) : IValidatable
 {
     public IEnumerable<ValidationFailure> Validate()
     {

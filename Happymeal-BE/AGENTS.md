@@ -28,6 +28,8 @@ Feature branches use `feature/<issue>-<description>` (for example: `feature/14-a
 
 ## Hard rules
 
+- When a parameter declaration spans multiple lines, start the parameters on the
+  line after the opening parenthesis and place one parameter per line.
 - Always use braces for every C# `if` and `else` body, including single statements.
 - For nontrivial params validation, prefer small private methods named after the
   rules they validate, composed with `Concat` in `Validate()` to collect all errors.
