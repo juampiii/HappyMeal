@@ -94,8 +94,7 @@ public class RecipeMigrationTests
         recipes.Should().HaveCount(names.Length);
         foreach(var recipe in recipes)
         {
-            names.Should().Contain(recipe.Name);
-            recipe.NameKey.Should().Be(RecipeName.Key(recipe.Name));
+            names.Select(name => name.Trim()).Should().Contain(recipe.Name);
             recipe.Version.Should().Be(1);
             recipe.IsPublished.Should().BeFalse();
             recipe.IsHidden.Should().BeFalse();

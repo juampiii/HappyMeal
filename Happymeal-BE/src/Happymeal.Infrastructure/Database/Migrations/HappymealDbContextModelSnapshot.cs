@@ -18,6 +18,7 @@ namespace Happymeal.Infrastructure.Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Happymeal")
+                .HasAnnotation("Npgsql:CollationDefinition:public.happymeal_recipe_name", "und-u-ks-level1,und-u-ks-level1,icu,False")
                 .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -56,11 +57,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("NameKey")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(200)")
+                        .UseCollation("happymeal_recipe_name");
 
                     b.Property<int?>("PreparationMinutes")
                         .HasColumnType("integer");
@@ -79,7 +77,7 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NameKey")
+                    b.HasIndex("Name")
                         .IsUnique();
 
                     b.ToTable("Recipes", "Happymeal");

@@ -14,13 +14,13 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
         builder.Property(r => r.Id).ValueGeneratedNever();
 
         builder.Property(r => r.Name)
+            .UseCollation(HappymealDbContext.RecipeNameCollation)
             .HasMaxLength(Recipe.NameMaxLength)
             .IsRequired();
 
         builder.Property(r => r.Description)
             .HasMaxLength(Recipe.DescriptionMaxLength);
-        builder.Property(r => r.NameKey).IsRequired();
-        builder.HasIndex(r => r.NameKey).IsUnique();
+        builder.HasIndex(r => r.Name).IsUnique();
         builder.Property(r => r.Revision).IsRowVersion();
         builder.OwnsMany(r => r.Steps, steps =>
         {

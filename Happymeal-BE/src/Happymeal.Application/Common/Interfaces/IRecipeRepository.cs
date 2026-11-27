@@ -13,5 +13,5 @@ public interface IRecipeRepository
 
     void Add(Recipe recipe);
 
-    Task<bool> NameExistsAsync(string nameKey, Guid exceptId, CancellationToken cancellationToken = default);
+    Task<bool> NameExistsAsync(string name, Guid exceptId, CancellationToken cancellationToken = default);
 }

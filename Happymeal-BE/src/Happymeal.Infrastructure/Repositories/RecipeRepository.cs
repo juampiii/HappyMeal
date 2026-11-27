@@ -32,6 +32,6 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
         dbContext.Recipes.Add(recipe);
     }
 
-    public Task<bool> NameExistsAsync(string nameKey, Guid exceptId, CancellationToken cancellationToken = default)
-        => dbContext.Recipes.AnyAsync(r => r.Id != exceptId && r.NameKey == nameKey, cancellationToken);
+    public Task<bool> NameExistsAsync(string name, Guid exceptId, CancellationToken cancellationToken = default)
+        => dbContext.Recipes.AnyAsync(r => r.Id != exceptId && r.Name == name, cancellationToken);
 }

@@ -31,7 +31,7 @@ public static class UpdateRecipeFeature
                 return Error.NotFound($"Recipe {command.Id} was not found.");
             }
 
-            if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id, cancellationToken))
+            if (await unitOfWork.RecipeRepository.NameExistsAsync(command.Name?.Trim() ?? string.Empty, command.Id, cancellationToken))
             {
                 return Error.Conflict("Recipe name already exists.");
             }

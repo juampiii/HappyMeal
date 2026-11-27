@@ -143,3 +143,42 @@ and [migration tests](../../../Happymeal-BE/tests/Happymeal.IntegrationTests/Rec
 
 No deployed household database was migrated. This amendment does not close the
 complete shared recipe-book story.
+
+## Review amendment — Recipe name collation
+
+**Agreement date:** 2026-11-27
+
+Replace the derived `NameKey` and custom Unicode key generation with a PostgreSQL
+ICU collation on `Recipe.Name`. Keep the displayed name and domain trimming;
+enforce case/accent-insensitive uniqueness with a unique index on that column.
+Repository checks compare names directly using the same database collation.
+Ingredient duplicate validation remains inside the aggregate, using the standard
+.NET invariant comparer with `IgnoreCase | IgnoreNonSpace` and trimmed names.
+The comparer is not claimed to reproduce every ICU equivalence for arbitrary text.
+
+The agreed implementation has two steps: replace the domain/application key flow
+and configure the collation; then migrate existing databases and verify database
+uniqueness, concurrent requests, updates, Unicode names and PostgreSQL 18 `LIKE`.
+Do not change recipe collection query splitting as part of this amendment.
+
+Use the `happymeal_recipe_name` collation in `public`, with ICU locale
+`und-u-ks-level1` and `deterministic: false`. The explicit schema prevents EF's
+default `Happymeal` schema from creating a collation outside the column's search
+path. The column has a unique index on `Name`; names are not normalized into a
+second domain property. Other text properties keep their existing collations.
+
+Add a forward migration rather than rewriting migrations already applied to local
+databases. The historical key backfill remains for that history and rollback only;
+its SQL behavior is unchanged. The new migration trims legacy display names,
+removes the key and replaces the unique index. It fails transactionally if the new
+collation reveals a collision. Downgrade restores historical keys before restoring
+their unique index, and removes the collation after removing its column dependency.
+Only temporary test databases are migrated during verification.
+
+Implemented and verified locally on 2026-11-27: solution build with enforced style
+passed (existing IDE0005 documentation-generation warning only), 72 unit tests and
+42 PostgreSQL integration tests passed. Tests cover composed/decomposed Unicode,
+case/accent-insensitive creation and updates, current-recipe exclusion, unique-index
+enforcement without a precheck, concurrent equivalent-name requests, PostgreSQL 18
+`LIKE`, upgrade/downgrade preservation and model/snapshot agreement. The original
+story plan remains unchanged; this closes only the name-comparison amendment.

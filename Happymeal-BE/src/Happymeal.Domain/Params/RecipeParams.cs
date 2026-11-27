@@ -1,3 +1,4 @@
+using System.Globalization;
 using Happymeal.Common.Validation;
 
 namespace Happymeal.Domain.Params;
@@ -50,7 +51,9 @@ public sealed record RecipeParams(
     private IEnumerable<ValidationFailure> ValidateIngredients()
     {
         var ingredients = Ingredients ?? [];
-        var names = new HashSet<string>(StringComparer.Ordinal);
+        var names = new HashSet<string>(StringComparer.Create(
+            CultureInfo.InvariantCulture,
+            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace));
 
         for (var i = 0; i < ingredients.Count; i++)
         {
@@ -67,7 +70,7 @@ public sealed record RecipeParams(
             {
                 yield return new ValidationFailure($"{path}.Name", "Name is required.");
             }
-            else if (!names.Add(RecipeName.Key(ingredient.Name)))
+            else if (!names.Add(ingredient.Name.Trim()))
             {
                 yield return new ValidationFailure($"{path}.Name", "Ingredient is repeated.");
             }

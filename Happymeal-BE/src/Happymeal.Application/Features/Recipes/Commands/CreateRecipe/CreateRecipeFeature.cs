@@ -40,7 +40,7 @@ public static class CreateRecipeFeature
                 return Error.Conflict($"Recipe {id} already exists.");
             }
 
-            if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id ?? id, cancellationToken))
+            if (await unitOfWork.RecipeRepository.NameExistsAsync(createResult.Value.Name, id, cancellationToken))
             {
                 return Error.Conflict("Recipe name already exists.");
             }

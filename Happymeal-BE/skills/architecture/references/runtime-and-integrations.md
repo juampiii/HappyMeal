@@ -33,7 +33,10 @@ Compose reads the database password from `.env`; the password in `appsettings.De
 - EF Core 10 with PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`). `HappymealDbContext` has default schema `Happymeal` and applies `IEntityTypeConfiguration<>` classes from the Infrastructure assembly. Table and column names keep the EF PascalCase names, so raw SQL must quote them (`"Happymeal"."Recipes"`).
 - `AddDbContext<HappymealDbContext>` is scoped, with retries on (`EnableRetryOnFailure`) and the `AuditableInterceptor`. The outbox dispatcher creates its own scope per batch.
 - `OnModelCreating` configures the audit columns of every `IAuditable` entity (`CreatedBy` required, both user columns max `IAuditable.UserMaxLength`).
-- PostgreSQL compares text case-sensitively. Use `EF.Functions.ILike` or a case-insensitive collation for name searches.
+- Recipe names use the `happymeal_recipe_name` ICU collation (`und-u-ks-level1`,
+  non-deterministic) and a unique index on `Name`. Trim names in Domain and compare
+  them directly in SQL; there is no derived name key. PostgreSQL 18 supports `LIKE`
+  with this collation, but not `ILIKE`. Other text columns retain their own collation.
 - `timestamptz` columns only accept `DateTimeOffset` values with a UTC offset. Always take time from `TimeProvider.GetUtcNow()`.
 
 ## Audit Fields

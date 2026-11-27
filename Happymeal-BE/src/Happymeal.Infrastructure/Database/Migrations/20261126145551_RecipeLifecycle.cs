@@ -120,7 +120,7 @@ namespace Happymeal.Infrastructure.Database.Migrations
         // Freeze the same Unicode decomposition, mark removal and invariant case mapping
         // used at runtime. SQL performs the row update without reading data outside the
         // migration transaction; the unique index aborts the migration on collisions.
-        private static string NameBackfillSql()
+        internal static string NameBackfillSql()
         {
             var source = new StringBuilder();
             var target = new StringBuilder();

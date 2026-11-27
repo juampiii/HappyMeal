@@ -14,7 +14,6 @@ public sealed class Recipe : AggregateRoot, IAuditable
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
 
-    public string NameKey { get; private set; } = null!;
     public bool IsPublished { get; private set; }
     public bool IsHidden { get; private set; }
     public int Version { get; private set; } = 1;
@@ -113,7 +112,6 @@ public sealed class Recipe : AggregateRoot, IAuditable
     private void Apply(RecipeParams parameters)
     {
         Name = parameters.Name;
-        NameKey = RecipeName.Key(Name);
         Description = parameters.Description;
         _ingredients = [.. (parameters.Ingredients ?? [])
             .Select((ingredient, position) => new RecipeIngredient(
