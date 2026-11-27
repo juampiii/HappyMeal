@@ -28,7 +28,15 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
     public async Task CreateAsync_WhenRequestIsValid_ShouldReturnCreatedAndPersistRecipe()
     {
         // Arrange
-        var request = new CreateRecipeRequestDto(null, "Burger", "With fries");
+        var request = new CreateRecipeRequestDto(
+            Id: null,
+            Name: "Burger",
+            Description: "With fries",
+            Ingredients: [new("Potato", 200m, "g")],
+            Steps: ["Cut", "Cook"],
+            Servings: 2,
+            PreparationMinutes: 20,
+            Tags: ["quick"]);
 
         // Act
         var response = await Client.PostAsJsonAsync(RecipesRoute, request, CancellationToken);
@@ -42,6 +50,15 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         var stored = await QueryAsync(db => db.Recipes.AsNoTracking().SingleAsync(r => r.Id == dto.Id, CancellationToken));
         stored.Name.Should().Be("Burger");
         stored.Description.Should().Be("With fries");
+        stored.Ingredients.Should().ContainSingle();
+        var ingredient = stored.Ingredients.Single();
+        ingredient.Name.Should().Be("Potato");
+        ingredient.Quantity.Should().Be(200m);
+        ingredient.Unit.Should().Be("g");
+        stored.Steps.Should().Equal("Cut", "Cook");
+        stored.Servings.Should().Be(2);
+        stored.PreparationMinutes.Should().Be(20);
+        stored.Tags.Should().Equal("quick");
         stored.CreatedBy.Should().Be(ICurrentUser.Anonymous);
         stored.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
         stored.ModifiedOn.Should().BeNull();
@@ -169,9 +186,20 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         // Arrange
         var recipe = await SeedRecipeAsync("Burger", "With fries");
 
+        var request = new UpdateRecipeRequestDto(
+            Name: "Burger XL",
+            Description: "Big",
+            Ingredients: [new("Bread", 2m, "ud")],
+            Steps: ["Toast", "Assemble"],
+            Servings: 3,
+            PreparationMinutes: 25,
+            Tags: ["homemade"]);
+
         // Act
         var response = await Client.PutAsJsonAsync(
-            $"{RecipesRoute}/{recipe.Id}", new UpdateRecipeRequestDto("Burger XL", "Big"), CancellationToken);
+            $"{RecipesRoute}/{recipe.Id}",
+            request,
+            CancellationToken);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -182,6 +210,16 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         var stored = await QueryAsync(db => db.Recipes.AsNoTracking().SingleAsync(CancellationToken));
         stored.Name.Should().Be("Burger XL");
         stored.Description.Should().Be("Big");
+        stored.Id.Should().Be(recipe.Id);
+        stored.Ingredients.Should().ContainSingle();
+        var ingredient = stored.Ingredients.Single();
+        ingredient.Name.Should().Be("Bread");
+        ingredient.Quantity.Should().Be(2m);
+        ingredient.Unit.Should().Be("ud");
+        stored.Steps.Should().Equal("Toast", "Assemble");
+        stored.Servings.Should().Be(3);
+        stored.PreparationMinutes.Should().Be(25);
+        stored.Tags.Should().Equal("homemade");
         stored.CreatedBy.Should().Be(ICurrentUser.System);
         stored.ModifiedBy.Should().Be(ICurrentUser.Anonymous);
         stored.ModifiedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));

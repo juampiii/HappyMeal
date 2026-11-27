@@ -1,11 +1,10 @@
 using Happymeal.Application.Features.Recipes.Commands.PublishRecipe;
 using Happymeal.API.Dtos;
 using Happymeal.API.Extensions;
+using Happymeal.API.Mappers;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Application.Features.Recipes;
-using Happymeal.Application.Features.Recipes.Commands.CreateRecipe;
 using Happymeal.Application.Features.Recipes.Commands.HideRecipe;
-using Happymeal.Application.Features.Recipes.Commands.UpdateRecipe;
 using Happymeal.Application.Features.Recipes.Queries.GetRecipeById;
 using Happymeal.Application.Features.Recipes.Queries.GetRecipes;
 using Microsoft.AspNetCore.Mvc;
@@ -42,8 +41,8 @@ public sealed class RecipesController(ISender sender) : ControllerBase
         [FromBody] CreateRecipeRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(
-            new CreateRecipeFeature.Command(request.Id, request.Name, request.Description, request.Ingredients, request.Steps, request.Servings, request.PreparationMinutes, request.Tags), cancellationToken);
+        var command = RecipeMapper.MapToCommand(request);
+        var result = await sender.SendAsync(command, cancellationToken);
 
         return this.ToActionResult(result, dto => CreatedAtAction(nameof(GetByIdAsync), new { id = dto.Id }, dto));
     }
@@ -57,8 +56,8 @@ public sealed class RecipesController(ISender sender) : ControllerBase
         [FromBody] UpdateRecipeRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await sender.SendAsync(
-            new UpdateRecipeFeature.Command(id, request.Name, request.Description, request.Ingredients, request.Steps, request.Servings, request.PreparationMinutes, request.Tags), cancellationToken);
+        var command = RecipeMapper.MapToCommand(request, id);
+        var result = await sender.SendAsync(command, cancellationToken);
 
         return this.ToActionResult(result);
     }
