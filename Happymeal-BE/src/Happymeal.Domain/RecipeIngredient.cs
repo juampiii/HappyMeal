@@ -12,5 +12,10 @@ public sealed class RecipeIngredient
         string name,
         decimal? quantity,
         UnitOfMeasure? unit)
-        => (Position, Name, Quantity, Unit) = (position, name, quantity, unit);
+    {
+        Position = position;
+        Name = name;
+        Quantity = quantity;
+        Unit = unit;
+    }
 }

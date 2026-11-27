@@ -21,6 +21,30 @@ public sealed record Command(
     string? Description = null);
 ```
 
+## Collections and constructors
+
+- Prefer collection expressions (`[]`, `[item]`, `[.. source]`) whenever the
+  target type permits them and behavior is preserved. In particular, use spread
+  expressions instead of ending LINQ projections with `ToArray()` or `ToList()`
+  when assigning to a known collection type or passing a collection argument.
+- Keep conversions when a collection expression has no target type or the
+  conversion provides required behavior, such as a read-only wrapper.
+- Write explicit constructors with block bodies and individual assignments.
+  Do not use expression-bodied constructors or tuple assignments to initialize
+  multiple properties. This does not require expanding positional records.
+
+```csharp
+_tags = [.. names.Select(name => new RecipeTag(name))];
+
+internal RecipeStep(
+    int position,
+    string content)
+{
+    Position = position;
+    Content = content;
+}
+```
+
 ## Mapping across layers
 
 - Put request DTO to Application command mappings in a static `<Entity>Mapper`
