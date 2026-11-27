@@ -11,7 +11,7 @@ public static class RecipeMapper
     {
         return new CreateRecipeFeature.Command(
             Id: request.Id,
-            Name: request.Name,
+            Name: request.Name ?? string.Empty,
             Description: request.Description,
             Ingredients: request.Ingredients,
             Steps: request.Steps,
@@ -26,7 +26,7 @@ public static class RecipeMapper
     {
         return new UpdateRecipeFeature.Command(
             Id: id,
-            Name: request.Name,
+            Name: request.Name ?? string.Empty,
             Description: request.Description,
             Ingredients: request.Ingredients,
             Steps: request.Steps,

@@ -333,3 +333,27 @@ integration tests passed. New tests cover validation codes/limits and camelCase
 indexed paths, unit-code propagation, publication parameters, not-found and
 precheck/database conflict codes, malformed JSON binding, unexpected 500 responses
 without internal details, legacy message compatibility and trace IDs.
+
+## Review amendment — Missing-name validation and HTTP-specific codes
+
+On 2026-11-27, the user requested follow-up corrections before moving to frontend.
+Allow missing/null names in create/update DTOs to reach the domain required rule,
+so otherwise-valid JSON returns `validation.required` for `name`. Preserve rejection
+of truly malformed JSON or wrong property types as binding errors. The request
+mapper represents the optional transport name as an empty command string.
+
+Restrict the automatic `request.invalid` mapping to HTTP 400; use distinct 405 and
+415 codes and a generic `http.error` fallback for other statuses without a specific
+code. Move concurrency/save-failure constants to Application's
+`RecipePersistenceErrorCodes`, keeping their wire values unchanged.
+
+The unique index still rejects equivalent existing names transactionally; do not
+delete or rename data automatically to make a migration succeed. Stable unit codes
+remain unchanged and will receive translated display labels in frontend. Frontend
+localization is still outside this backend correction.
+
+Verified locally: enforced-style solution build passed (existing IDE0005 warnings
+only), 82 unit tests and 62 PostgreSQL integration tests passed. New contract tests
+exercise `{}` and explicit null names for both create and update, preserve stored
+names after rejected updates, and verify distinct HTTP 405/415 codes. No schema
+or migration changes were required; serialized persistence codes are unchanged.

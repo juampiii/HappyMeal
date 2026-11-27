@@ -24,9 +24,13 @@ public static class ApiServiceExtensions
                 {
                     var code = context.ProblemDetails.Status switch
                     {
+                        StatusCodes.Status400BadRequest => ErrorCodes.InvalidRequest,
                         StatusCodes.Status404NotFound => ErrorCodes.NotFound,
+                        StatusCodes.Status405MethodNotAllowed => ErrorCodes.MethodNotAllowed,
+                        StatusCodes.Status409Conflict => ErrorCodes.Conflict,
+                        StatusCodes.Status415UnsupportedMediaType => ErrorCodes.UnsupportedMediaType,
                         >= StatusCodes.Status500InternalServerError => ErrorCodes.Unexpected,
-                        _ => ErrorCodes.InvalidRequest
+                        _ => ErrorCodes.HttpError
                     };
                     context.ProblemDetails.Extensions.TryAdd("code", code);
                 };

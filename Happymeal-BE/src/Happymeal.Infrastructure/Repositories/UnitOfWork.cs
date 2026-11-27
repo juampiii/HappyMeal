@@ -1,3 +1,4 @@
+using Happymeal.Application.Features.Recipes;
 using Happymeal.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -32,7 +33,7 @@ internal sealed class UnitOfWork(
         catch (DbUpdateConcurrencyException)
         {
             dbContext.ChangeTracker.Clear();
-            return Error.Conflict("Recipe changed concurrently. Reload it and try again.", RecipeErrorCodes.ConcurrentChange);
+            return Error.Conflict("Recipe changed concurrently. Reload it and try again.", RecipePersistenceErrorCodes.ConcurrentChange);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {

@@ -55,7 +55,7 @@ public static class CreateRecipeFeature
             }
             var wasSaved = saved.Value;
             return !wasSaved
-                ? Error.Failure("Recipe could not be persisted.", RecipeErrorCodes.SaveFailed)
+                ? Error.Failure("Recipe could not be persisted.", RecipePersistenceErrorCodes.SaveFailed)
                 : Result.Success(RecipeDto.From(recipe));
         }
     }

@@ -20,6 +20,75 @@ public class ErrorContractTests(HappymealApiFactory factory) : TestBase(factory)
 {
     private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"name\":null}")]
+    public async Task CreateAsync_WhenNameIsMissingOrNull_ShouldReturnRequiredValidationCode(string json)
+    {
+        // Arrange
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await Client.PostAsync("api/recipes", content, CancellationToken);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(CancellationToken);
+        problem.GetProperty("code").GetString().Should().Be("validation.failed");
+        problem.GetProperty("validationErrors").GetProperty("name")[0].GetProperty("code")
+            .GetString().Should().Be("validation.required");
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"name\":null}")]
+    public async Task UpdateAsync_WhenNameIsMissingOrNull_ShouldReturnRequiredCodeAndKeepName(string json)
+    {
+        // Arrange
+        var recipe = Recipe.Create(Guid.CreateVersion7(), new RecipeParams("Soup")).Value;
+        await SeedAsync(db => db.Recipes.AddAsync(recipe, CancellationToken).AsTask());
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await Client.PutAsync($"api/recipes/{recipe.Id}", content, CancellationToken);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(CancellationToken);
+        problem.GetProperty("code").GetString().Should().Be("validation.failed");
+        problem.GetProperty("validationErrors").GetProperty("name")[0].GetProperty("code")
+            .GetString().Should().Be("validation.required");
+        var saved = await Client.GetFromJsonAsync<RecipeDto>($"api/recipes/{recipe.Id}", CancellationToken);
+        saved!.Name.Should().Be("Soup");
+    }
+
+    [Fact]
+    public async Task PatchAsync_WhenMethodIsUnsupported_ShouldReturnMethodCode()
+    {
+        // Act
+        var response = await Client.PatchAsync("api/recipes", null, CancellationToken);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(CancellationToken);
+        problem.GetProperty("code").GetString().Should().Be("http.methodNotAllowed");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenMediaTypeIsUnsupported_ShouldReturnMediaTypeCode()
+    {
+        // Arrange
+        using var content = new StringContent("Soup", Encoding.UTF8, "text/plain");
+
+        // Act
+        var response = await Client.PostAsync("api/recipes", content, CancellationToken);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(CancellationToken);
+        problem.GetProperty("code").GetString().Should().Be("http.unsupportedMediaType");
+    }
+
     [Fact]
     public async Task CreateAsync_WhenValidationFails_ShouldReturnCodesParametersAndExistingMessages()
     {

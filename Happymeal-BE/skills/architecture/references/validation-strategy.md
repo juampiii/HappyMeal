@@ -65,7 +65,8 @@ Do not duplicate a Domain rule in Application. There is no FluentValidation in t
 
 - Keep English diagnostic messages for compatibility. Clients translate stable
   `Error.Code` and `ValidationFailure.Code`, not those messages. Use named constants
-  from `RecipeErrorCodes`, `ErrorCodes` and `ValidationErrorCodes`; codes never
+  from `RecipeErrorCodes`, Application's `RecipePersistenceErrorCodes`,
+  `ErrorCodes` and `ValidationErrorCodes`; codes never
   depend on the selected language or on message parsing.
 - `ValidationFailure.Parameters` carries interpolation values such as `max` and
   `min`. Preserve codes and parameters when remapping a validation failure to a
@@ -76,6 +77,13 @@ Do not duplicate a Domain rule in Application. There is no FluentValidation in t
 - Model-binding failures get `request.invalid` and per-field `request.invalidValue`
   without interpreting framework messages. Unexpected exceptions get
   `error.unexpected` without disclosing internal details.
+- Nullable recipe request names let missing/null names reach the domain required
+  rule instead of MVC's implicit required-property check. The request mapper
+  represents an absent name as an empty command string; Domain validates it.
+- Use `request.invalid` only as the automatic HTTP 400 code. HTTP 405 and 415 have
+  distinct codes; other unmatched HTTP errors use `http.error` with their status.
+- Persistence outcome codes belong to Application, where persistence contracts
+  are defined. Infrastructure consumes them; Domain does not own storage failures.
 
 ## Testing
 

@@ -71,12 +71,26 @@ can refer to either incoming entries (100) or distinct nonempty tags (20).
 | `request.invalidValue` | Field-level fallback for model-binding errors such as invalid JSON value types. |
 | `resource.notFound` | Generic not-found response, including unmatched routes. |
 | `resource.conflict` | Generic conflict when no domain code was supplied. |
+| `http.methodNotAllowed` | HTTP 405: the route does not support the requested method. |
+| `http.unsupportedMediaType` | HTTP 415: the request content type is unsupported. |
+| `http.error` | Other HTTP errors without a more specific code; inspect the status. |
 | `error.failure` | Explicit failure without a more specific code. |
 | `error.unexpected` | Unexpected server exception handled by the API middleware. |
 
 Automatic binding errors keep ASP.NET's field paths and diagnostic messages.
 Their codes are assigned without interpreting framework-generated English text.
 Unhandled exceptions expose a generic code and do not disclose exception details.
+Only HTTP 400 uses the automatic `request.invalid` mapping. Missing or null recipe
+names in otherwise valid JSON reach domain validation and return
+`validation.required` under the `name` field, for both create and update requests.
+
+`RecipePersistenceErrorCodes` in Application owns `recipe.concurrentChange` and
+`recipe.saveFailed`. Their serialized values remain unchanged. Domain owns its
+business outcome codes; Infrastructure consumes the Application persistence codes.
+
+Unit codes such as `ud`, `cucharadita` and `cucharada` are stable transport values,
+not UI labels. The frontend translates their labels while sending these same
+codes in either language. Recipe names and user-written contents are not translated.
 
 Clients should keep a localized generic fallback for unknown future codes. A
 code's meaning is a public contract: changing diagnostic wording does not change

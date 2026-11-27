@@ -9,4 +9,7 @@ public static class ErrorCodes
     public const string NotFound = "resource.notFound";
     public const string Conflict = "resource.conflict";
     public const string Validation = "validation.failed";
+    public const string MethodNotAllowed = "http.methodNotAllowed";
+    public const string UnsupportedMediaType = "http.unsupportedMediaType";
+    public const string HttpError = "http.error";
 }

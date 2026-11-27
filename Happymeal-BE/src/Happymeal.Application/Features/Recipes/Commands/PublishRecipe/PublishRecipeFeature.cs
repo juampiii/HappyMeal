@@ -30,7 +30,7 @@ public static class PublishRecipeFeature
             {
                 return saved.Error!;
             }
-            return saved.Value ? Result.Success() : Error.Failure("Recipe could not be persisted.", RecipeErrorCodes.SaveFailed);
+            return saved.Value ? Result.Success() : Error.Failure("Recipe could not be persisted.", RecipePersistenceErrorCodes.SaveFailed);
         }
     }
 }
