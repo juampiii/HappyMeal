@@ -39,7 +39,7 @@ internal sealed class UnitOfWork(
 
     private void StageDomainEvents()
     {
-        // An owned-ingredient-only edit must also update the root so xmin protects
+        // An edit to owned elements must also update the root so xmin protects
         // the complete aggregate against a concurrent publication.
         foreach (var entry in dbContext.ChangeTracker.Entries<AggregateRoot>())
         {

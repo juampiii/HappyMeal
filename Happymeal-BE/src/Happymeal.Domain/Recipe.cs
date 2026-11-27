@@ -21,8 +21,10 @@ public sealed class Recipe : AggregateRoot, IAuditable
     public uint Revision { get; private set; }
     private List<RecipeIngredient> _ingredients = [];
     public IReadOnlyList<RecipeIngredient> Ingredients => _ingredients.AsReadOnly();
-    public IReadOnlyList<string> Steps { get; private set; } = Array.Empty<string>();
-    public IReadOnlyList<string> Tags { get; private set; } = Array.Empty<string>();
+    private List<RecipeStep> _steps = [];
+    public IReadOnlyList<RecipeStep> Steps => _steps.OrderBy(step => step.Position).ToList().AsReadOnly();
+    private List<RecipeTag> _tags = [];
+    public IReadOnlyList<RecipeTag> Tags => _tags.AsReadOnly();
     public int? Servings { get; private set; }
     public int? PreparationMinutes { get; private set; }
 
@@ -113,15 +115,21 @@ public sealed class Recipe : AggregateRoot, IAuditable
         Name = parameters.Name;
         NameKey = RecipeName.Key(Name);
         Description = parameters.Description;
-        _ingredients = (parameters.Ingredients ?? [])
+        _ingredients = [.. (parameters.Ingredients ?? [])
             .Select((ingredient, position) => new RecipeIngredient(
                 position: position,
                 name: ingredient.Name.Trim(),
                 quantity: ingredient.Quantity,
-                unit: ingredient.Unit is null ? null : UnitOfMeasure.Create(ingredient.Unit).Value))
-            .ToList();
-        Steps = Array.AsReadOnly((parameters.Steps ?? []).Select(x => x.Trim()).ToArray());
-        Tags = Array.AsReadOnly((parameters.Tags ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToArray());
+                unit: ingredient.Unit is null ? null : UnitOfMeasure.Create(ingredient.Unit).Value))];
+        _steps = [.. (parameters.Steps ?? [])
+            .Select((content, position) => new RecipeStep(
+                position: position,
+                content: content.Trim()))];
+        _tags = [.. (parameters.Tags ?? [])
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct()
+            .Select(name => new RecipeTag(name))];
         Servings = parameters.Servings;
         PreparationMinutes = parameters.PreparationMinutes;
     }

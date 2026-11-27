@@ -74,14 +74,6 @@ namespace Happymeal.Infrastructure.Database.Migrations
                     b.Property<int?>("Servings")
                         .HasColumnType("integer");
 
-                    b.Property<string[]>("Steps")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.Property<string[]>("Tags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
@@ -165,7 +157,47 @@ namespace Happymeal.Infrastructure.Database.Migrations
                                 .HasForeignKey("RecipeId");
                         });
 
+                    b.OwnsMany("Happymeal.Domain.RecipeStep", "Steps", b1 =>
+                        {
+                            b1.Property<Guid>("RecipeId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("Position")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Content")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.HasKey("RecipeId", "Position");
+
+                            b1.ToTable("RecipeSteps", "Happymeal");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RecipeId");
+                        });
+
+                    b.OwnsMany("Happymeal.Domain.RecipeTag", "Tags", b1 =>
+                        {
+                            b1.Property<Guid>("RecipeId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Name")
+                                .HasColumnType("text");
+
+                            b1.HasKey("RecipeId", "Name");
+
+                            b1.ToTable("RecipeTags", "Happymeal");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RecipeId");
+                        });
+
                     b.Navigation("Ingredients");
+
+                    b.Navigation("Steps");
+
+                    b.Navigation("Tags");
                 });
 #pragma warning restore 612, 618
         }

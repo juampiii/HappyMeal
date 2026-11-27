@@ -85,3 +85,61 @@ rule to replace every string with a value object.
 - [Unit of measure](../../../Happymeal-BE/src/Happymeal.Domain/UnitOfMeasure.cs)
 - [Value object tests](../../../Happymeal-BE/tests/Happymeal.UnitTests/Domain/UnitOfMeasureTests.cs)
 - [Persistence and contract tests](../../../Happymeal-BE/tests/Happymeal.IntegrationTests/Recipes/UnitOfMeasurePersistenceTests.cs)
+
+## 6. Review amendment: recipe-owned steps and tags
+
+**Agreement date:** 2026-11-27
+
+**Status:** Completed and verified locally
+
+The unit-of-measure plan and its verified outcome above remain unchanged. This
+additional amendment replaces the list converters and custom collection comparers
+for steps and tags with explicit elements owned by the recipe aggregate.
+
+`Recipe` controls the creation and modification of ingredients, steps and tags,
+including validation and publication restrictions. `RecipeStep` contains a
+zero-based `Position` and `Content`; `RecipeTag` contains `Name`. Neither has a
+separate repository or independent identifier. The API continues to receive and
+return string lists, and a global tag catalog remains outside scope.
+
+| Step | Work | Observable outcome |
+| --- | --- | --- |
+| O1 · Model steps and tags within the recipe aggregate | Add owned domain types and read-only collections; adapt response projection. | Existing normalization, validation and lifecycle rules remain intact, and steps are explicitly ordered by position. |
+| O2 · Migrate recipe contents to owned tables | Map `RecipeSteps` and `RecipeTags` with owner-scoped keys; migrate the existing arrays. | Existing text and step order survive upgrade and downgrade, with no custom collection converter or comparer. |
+| O3 · Verify aggregate persistence and record modeling preferences | Exercise replacement, ordering and concurrency; document the domain modeling criteria in the architecture skill. | Repeated tracked edits save correctly; child-only changes keep audit, concurrency and outbox behavior. |
+
+### Amendment outcome
+
+Implemented on 2026-11-27 without scope deviations. `RecipeStep` and `RecipeTag`
+are created within `Recipe`, whose read-only collections protect external access.
+Step reads explicitly sort by position. Requests and responses retain string
+lists, and publication restrictions and normalization remain unchanged.
+
+EF now maps the two collections to `RecipeSteps` and `RecipeTags` using owner-scoped
+keys and backing fields. The migration backfills the old arrays before dropping
+their columns and reconstructs them on downgrade. Tag order is not significant;
+step order is preserved in both directions. Existing aggregate root updates
+continue to protect owned-content-only edits with audit stamping, `xmin`
+concurrency and transactional outbox events.
+
+Verification:
+
+- Solution build with `EnforceCodeStyleInBuild=true`: passed with the existing
+  IDE0005 documentation-generation warnings only.
+- Unit suite: 72 passed, including normalized step content, positions and tags.
+- Docker/PostgreSQL integration suite: 37 passed. Coverage includes migration
+  upgrade/downgrade with existing content and empty drafts, unordered database
+  insertion, unchanged detail/list HTTP contracts, repeated replacements in one
+  tracked context, audit/events and step/tag edits racing publication.
+- EF model matches the migration snapshot; `git diff --check` passed.
+
+Reusable preferences are recorded in the architecture skill's
+[domain modeling reference](../../../Happymeal-BE/skills/architecture/references/domain-modeling.md).
+The main implementation and persistence checks are in
+[Recipe](../../../Happymeal-BE/src/Happymeal.Domain/Recipe.cs),
+[RecipeConfiguration](../../../Happymeal-BE/src/Happymeal.Infrastructure/Database/Configurations/RecipeConfiguration.cs),
+[owned-content persistence tests](../../../Happymeal-BE/tests/Happymeal.IntegrationTests/Recipes/RecipeOwnedContentPersistenceTests.cs)
+and [migration tests](../../../Happymeal-BE/tests/Happymeal.IntegrationTests/Recipes/RecipeMigrationTests.cs).
+
+No deployed household database was migrated. This amendment does not close the
+complete shared recipe-book story.

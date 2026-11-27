@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Happymeal.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,18 +22,25 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
         builder.Property(r => r.NameKey).IsRequired();
         builder.HasIndex(r => r.NameKey).IsUnique();
         builder.Property(r => r.Revision).IsRowVersion();
-        builder.Property(r => r.Steps).HasConversion(
-            v => v.ToArray(), v => Array.AsReadOnly(v))
-            .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<string>>(
-                (left, right) => left != null && right != null && left.SequenceEqual(right),
-                values => values.Aggregate(0, (hash, value) => HashCode.Combine(hash, value.GetHashCode())),
-                values => Array.AsReadOnly(values.ToArray())));
-        builder.Property(r => r.Tags).HasConversion(
-            v => v.ToArray(), v => Array.AsReadOnly(v))
-            .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<string>>(
-                (left, right) => left != null && right != null && left.SequenceEqual(right),
-                values => values.Aggregate(0, (hash, value) => HashCode.Combine(hash, value.GetHashCode())),
-                values => Array.AsReadOnly(values.ToArray())));
+        builder.OwnsMany(r => r.Steps, steps =>
+        {
+            steps.ToTable("RecipeSteps");
+            steps.WithOwner().HasForeignKey("RecipeId");
+            steps.HasKey("RecipeId", nameof(RecipeStep.Position));
+            steps.Property(step => step.Position).ValueGeneratedNever();
+            steps.Property(step => step.Content).IsRequired();
+        });
+        builder.Navigation(r => r.Steps).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(r => r.Tags, tags =>
+        {
+            tags.ToTable("RecipeTags");
+            tags.WithOwner().HasForeignKey("RecipeId");
+            tags.HasKey("RecipeId", nameof(RecipeTag.Name));
+            tags.Property(tag => tag.Name).IsRequired();
+        });
+        builder.Navigation(r => r.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.OwnsMany(r => r.Ingredients, ingredients =>
         {
             ingredients.ToTable("RecipeIngredients");

@@ -56,10 +56,10 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         ingredient.Quantity.Should().Be(200m);
         ingredient.Unit!.Code.Should().Be("g");
         dto.Ingredients!.Single().Unit.Should().Be("g");
-        stored.Steps.Should().Equal("Cut", "Cook");
+        stored.Steps.Select(step => step.Content).Should().Equal("Cut", "Cook");
         stored.Servings.Should().Be(2);
         stored.PreparationMinutes.Should().Be(20);
-        stored.Tags.Should().Equal("quick");
+        stored.Tags.Select(tag => tag.Name).Should().Equal("quick");
         stored.CreatedBy.Should().Be(ICurrentUser.Anonymous);
         stored.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
         stored.ModifiedOn.Should().BeNull();
@@ -218,10 +218,10 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         ingredient.Quantity.Should().Be(2m);
         ingredient.Unit!.Code.Should().Be("ud");
         dto.Ingredients!.Single().Unit.Should().Be("ud");
-        stored.Steps.Should().Equal("Toast", "Assemble");
+        stored.Steps.Select(step => step.Content).Should().Equal("Toast", "Assemble");
         stored.Servings.Should().Be(3);
         stored.PreparationMinutes.Should().Be(25);
-        stored.Tags.Should().Equal("homemade");
+        stored.Tags.Select(tag => tag.Name).Should().Equal("homemade");
         stored.CreatedBy.Should().Be(ICurrentUser.System);
         stored.ModifiedBy.Should().Be(ICurrentUser.Anonymous);
         stored.ModifiedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));

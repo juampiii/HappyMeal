@@ -36,6 +36,39 @@ public class RecipeTests
     }
 
     [Fact]
+    public void Create_WhenStepsContainWhitespace_ShouldTrimContentAndKeepTheirPositions()
+    {
+        // Arrange
+        var content = new RecipeParams(
+            Name: "Soup",
+            Steps: ["  Chop  ", "  Cook  ", "Serve"]);
+
+        // Act
+        var result = Recipe.Create(Guid.CreateVersion7(), content);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Steps.Select(step => step.Content).Should().Equal("Chop", "Cook", "Serve");
+        result.Value.Steps.Select(step => step.Position).Should().Equal(0, 1, 2);
+    }
+
+    [Fact]
+    public void Create_WhenTagsContainWhitespaceAndDuplicates_ShouldKeepDistinctNonemptyNames()
+    {
+        // Arrange
+        var content = new RecipeParams(
+            Name: "Soup",
+            Tags: ["  quick  ", "", " ", "quick", "vegan"]);
+
+        // Act
+        var result = Recipe.Create(Guid.CreateVersion7(), content);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Tags.Select(tag => tag.Name).Should().BeEquivalentTo("quick", "vegan");
+    }
+
+    [Fact]
     public void Create_WhenNameAndDescriptionHaveExtraSpaces_ShouldTrimThem()
     {
         var result = Recipe.Create(Guid.CreateVersion7(), new RecipeParams("  Burger ", "  With fries  "));

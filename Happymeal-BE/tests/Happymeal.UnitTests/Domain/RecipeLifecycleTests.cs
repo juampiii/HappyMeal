@@ -59,7 +59,7 @@ public class RecipeLifecycleTests
         result.Error!.Type.Should().Be(ErrorType.Conflict);
         recipe.Name.Should().Be("Tortilla");
         recipe.Ingredients.Single().Name.Should().Be("Sal");
-        recipe.Steps.Should().Equal("Mezclar", "Cocinar");
+        recipe.Steps.Select(step => step.Content).Should().Equal("Mezclar", "Cocinar");
         recipe.GetDomainEvents().Should().BeEmpty();
     }
 
@@ -81,7 +81,7 @@ public class RecipeLifecycleTests
         recipe.IsHidden.Should().BeTrue();
         recipe.IsPublished.Should().BeTrue();
         recipe.Ingredients.Single().Quantity.Should().Be(0.5m);
-        recipe.Steps.Should().Equal("Mezclar", "Cocinar");
+        recipe.Steps.Select(step => step.Content).Should().Equal("Mezclar", "Cocinar");
         recipe.GetDomainEvents().Should().ContainSingle()
             .Which.Should().BeOfType<RecipeHiddenDomainEvent>();
     }
@@ -104,7 +104,7 @@ public class RecipeLifecycleTests
         result.IsFailure.Should().BeTrue();
         recipe.Name.Should().Be("Tortilla");
         recipe.Ingredients.Single().Quantity.Should().Be(0.5m);
-        recipe.Steps.Should().Equal("Mezclar", "Cocinar");
+        recipe.Steps.Select(step => step.Content).Should().Equal("Mezclar", "Cocinar");
         recipe.GetDomainEvents().Should().BeEmpty();
     }
 
