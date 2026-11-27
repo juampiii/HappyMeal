@@ -1,9 +1,16 @@
-<a routerLink="/" class="back">Volver al recetario</a>
+<a routerLink="/" class="back">{{ i18n.t('recipe.back') }}</a>
 @if (loading()) {
-  <p role="status">Cargando receta…</p>
+  <p role="status">{{ i18n.t('recipe.loading') }}</p>
 }
-@if (error()) {
-  <div class="notice error" role="alert">{{ error() }}</div>
+@if (error() && !confirmHide()) {
+  <div class="notice error" role="alert">
+    {{ error() }}
+    @if (canRetryLoad() && !loading()) {
+      <button type="button" class="quiet" [disabled]="busy()" (click)="retryLoad()">
+        {{ i18n.t('action.retry') }}
+      </button>
+    }
+  </div>
 }
 @if (message()) {
   <div class="notice" role="status">{{ message() }}</div>
@@ -12,87 +19,210 @@
   @if (editing()) {
     <section class="heading compact">
       <div>
-        <p class="eyebrow">PASO A PASO</p>
-        <h1>{{ recipe() ? 'Editar borrador' : 'Una nueva receta' }}</h1>
-        <p>Empieza con un nombre. Puedes completar el resto cuando quieras.</p>
+        <p class="eyebrow">{{ i18n.t('recipe.eyebrow') }}</p>
+        <h1>{{ i18n.t(recipe() ? 'recipe.edit' : 'recipe.new') }}</h1>
+        <p>{{ i18n.t('recipe.intro') }}</p>
       </div>
-      <span class="badge">Borrador</span>
+      <span class="badge">{{ i18n.t('recipe.draft') }}</span>
     </section>
     <form [formGroup]="form" (ngSubmit)="save()" class="recipe-form">
       <fieldset [disabled]="busy()">
         <section class="panel">
-          <h2>Lo esencial</h2>
-          <label
-            >Nombre de la receta <span class="required">Obligatorio</span
-            ><input
+          <h2>{{ i18n.t('recipe.essentials') }}</h2>
+          <div class="form-field">
+            <label for="recipe-name"
+              >{{ i18n.t('field.name') }}
+              <span class="required" aria-hidden="true">{{
+                i18n.t('recipe.required')
+              }}</span></label
+            >
+            <input
+              id="recipe-name"
               formControlName="name"
-              maxlength="200"
-              placeholder="Por ejemplo, tortilla de patatas"
-              required /></label
-          ><label
-            >Descripción<textarea
+              [maxlength]="limits.name"
+              aria-describedby="name-error"
+              [attr.aria-invalid]="fieldInvalid(form.controls.name, 'name')"
+              [placeholder]="i18n.t('recipe.namePlaceholder')"
+              required
+            />
+            <app-field-error
+              id="name-error"
+              [control]="form.controls.name"
+              path="name"
+              [serverError]="serverError()"
+            />
+          </div>
+          <div class="form-field">
+            <label for="recipe-description">{{ i18n.t('field.description') }}</label>
+            <textarea
+              id="recipe-description"
               formControlName="description"
-              maxlength="2000"
+              [maxlength]="limits.description"
+              aria-describedby="description-error"
+              [attr.aria-invalid]="fieldInvalid(form.controls.description, 'description')"
               rows="3"
-              placeholder="Qué hace especial esta receta"
+              [placeholder]="i18n.t('recipe.descriptionPlaceholder')"
             ></textarea>
-          </label>
+            <app-field-error
+              id="description-error"
+              [control]="form.controls.description"
+              path="description"
+              [serverError]="serverError()"
+            />
+          </div>
           <div class="two-columns">
-            <label
-              >Raciones<input
+            <div class="form-field">
+              <label for="recipe-servings">{{ i18n.t('field.servings') }}</label>
+              <input
+                id="recipe-servings"
                 type="number"
                 min="1"
                 step="1"
                 formControlName="servings"
-                placeholder="Opcional" /></label
-            ><label
-              >Tiempo de preparación (min)<input
+                aria-describedby="servings-error"
+                [attr.aria-invalid]="fieldInvalid(form.controls.servings, 'servings')"
+                [placeholder]="i18n.t('recipe.optional')"
+              />
+              <app-field-error
+                id="servings-error"
+                [control]="form.controls.servings"
+                path="servings"
+                [serverError]="serverError()"
+              />
+            </div>
+            <div class="form-field">
+              <label for="recipe-minutes">{{ i18n.t('field.preparationMinutes') }}</label>
+              <input
+                id="recipe-minutes"
                 type="number"
                 min="1"
                 step="1"
                 formControlName="preparationMinutes"
-                placeholder="Opcional"
-            /></label>
+                aria-describedby="minutes-error"
+                [attr.aria-invalid]="
+                  fieldInvalid(form.controls.preparationMinutes, 'preparationMinutes')
+                "
+                [placeholder]="i18n.t('recipe.optional')"
+              />
+              <app-field-error
+                id="minutes-error"
+                [control]="form.controls.preparationMinutes"
+                path="preparationMinutes"
+                [serverError]="serverError()"
+              />
+            </div>
           </div>
-          <label
-            >Etiquetas<input
+          <div class="form-field">
+            <label for="recipe-tags">{{ i18n.t('field.tags') }}</label>
+            <input
+              id="recipe-tags"
               formControlName="tags"
-              placeholder="horno, vegetariana, rápida"
-            /><small>Separa las etiquetas con comas.</small></label
-          >
+              aria-describedby="tags-help tags-error"
+              [attr.aria-invalid]="fieldInvalid(form.controls.tags, 'tags')"
+              [placeholder]="i18n.t('recipe.tagsPlaceholder')"
+            />
+            <small id="tags-help">{{ i18n.t('recipe.tagsHelp') }}</small>
+            <app-field-error
+              id="tags-error"
+              [control]="form.controls.tags"
+              path="tags"
+              [serverError]="serverError()"
+            />
+          </div>
         </section>
         <section class="panel">
           <div class="section-title">
-            <h2>Ingredientes</h2>
-            <button type="button" class="quiet" (click)="addIngredient()">
-              Añadir ingrediente
+            <h2>{{ i18n.t('field.ingredients') }}</h2>
+            <button
+              type="button"
+              class="quiet"
+              [disabled]="ingredients.length >= limits.ingredients"
+              (click)="addIngredient()"
+            >
+              {{ i18n.t('recipe.addIngredient') }}
             </button>
           </div>
-          <p class="muted">Cantidad y unidad son opcionales: también vale «sal al gusto».</p>
+          <p class="muted">{{ i18n.t('recipe.ingredientHelp') }}</p>
+          <app-field-error
+            [control]="ingredients"
+            path="ingredients"
+            [serverError]="serverError()"
+          />
           <div formArrayName="ingredients">
             @for (row of ingredients.controls; track row; let i = $index) {
               <div class="ingredient-row" [formGroupName]="i">
-                <label>Ingrediente<input formControlName="name" required /></label
-                ><label
-                  >Cantidad<input
+                <div class="form-field">
+                  <label [for]="'ingredient-name-' + i">{{
+                    i18n.t('field.ingredientInput')
+                  }}</label>
+                  <input
+                    [id]="'ingredient-name-' + i"
+                    formControlName="name"
+                    [maxlength]="limits.ingredientName"
+                    required
+                    [attr.aria-describedby]="'ingredient-name-error-' + i"
+                    [attr.aria-invalid]="
+                      fieldInvalid(row.controls.name, 'ingredients[' + i + '].name')
+                    "
+                  />
+                  <app-field-error
+                    [id]="'ingredient-name-error-' + i"
+                    [control]="row.controls.name"
+                    [path]="'ingredients[' + i + '].name'"
+                    [serverError]="serverError()"
+                  />
+                </div>
+                <div class="form-field">
+                  <label [for]="'ingredient-quantity-' + i">{{ i18n.t('field.quantity') }}</label>
+                  <input
+                    [id]="'ingredient-quantity-' + i"
                     type="number"
                     step="any"
                     min="0"
-                    formControlName="quantity" /></label
-                ><label
-                  >Unidad<select formControlName="unit">
-                    <option value="">Sin unidad</option>
+                    formControlName="quantity"
+                    [attr.aria-describedby]="'ingredient-quantity-error-' + i"
+                    [attr.aria-invalid]="
+                      fieldInvalid(row.controls.quantity, 'ingredients[' + i + '].quantity')
+                    "
+                  />
+                  <app-field-error
+                    [id]="'ingredient-quantity-error-' + i"
+                    [control]="row.controls.quantity"
+                    [path]="'ingredients[' + i + '].quantity'"
+                    [serverError]="serverError()"
+                  />
+                </div>
+                <div class="form-field">
+                  <label [for]="'ingredient-unit-' + i">{{ i18n.t('field.unit') }}</label>
+                  <select
+                    [id]="'ingredient-unit-' + i"
+                    formControlName="unit"
+                    [attr.aria-describedby]="'ingredient-unit-error-' + i"
+                    [attr.aria-invalid]="
+                      fieldInvalid(row.controls.unit, 'ingredients[' + i + '].unit')
+                    "
+                  >
+                    <option value="">{{ i18n.t('recipe.noUnit') }}</option>
                     @for (unit of units; track unit.code) {
-                      <option [value]="unit.code">{{ unit.label }}</option>
+                      <option [value]="unit.code">{{ i18n.t(unit.labelKey) }}</option>
                     }
-                  </select></label
-                ><button
+                  </select>
+                  <app-field-error
+                    [id]="'ingredient-unit-error-' + i"
+                    [control]="row.controls.unit"
+                    [path]="'ingredients[' + i + '].unit'"
+                    [serverError]="serverError()"
+                  />
+                </div>
+                <button
                   type="button"
                   class="remove"
-                  [attr.aria-label]="'Quitar ingrediente ' + (i + 1)"
+                  [attr.aria-label]="
+                    i18n.t('recipe.removeIngredient', { index: i18n.number(i + 1) })
+                  "
                   (click)="ingredients.removeAt(i)"
                 >
-                  Quitar
+                  {{ i18n.t('action.remove') }}
                 </button>
               </div>
             }
@@ -100,54 +230,81 @@
         </section>
         <section class="panel">
           <div class="section-title">
-            <h2>Preparación</h2>
-            <button type="button" class="quiet" (click)="addStep()">Añadir paso</button>
+            <h2>{{ i18n.t('field.steps') }}</h2>
+            <button
+              type="button"
+              class="quiet"
+              [disabled]="steps.length >= limits.steps"
+              (click)="addStep()"
+            >
+              {{ i18n.t('recipe.addStep') }}
+            </button>
           </div>
+          <app-field-error [control]="steps" path="steps" [serverError]="serverError()" />
           <div formArrayName="steps">
             @for (step of steps.controls; track step; let i = $index) {
               <div class="step-row">
-                <label
-                  >Paso {{ i + 1 }}<textarea [formControlName]="i" rows="2" required></textarea>
-                </label>
+                <div class="form-field">
+                  <label [for]="'recipe-step-' + i">{{
+                    i18n.t('recipe.step', { index: i18n.number(i + 1) })
+                  }}</label>
+                  <textarea
+                    [id]="'recipe-step-' + i"
+                    [formControlName]="i"
+                    [maxlength]="limits.step"
+                    rows="2"
+                    required
+                    [attr.aria-describedby]="'step-error-' + i"
+                    [attr.aria-invalid]="fieldInvalid(step, 'steps[' + i + ']')"
+                  ></textarea>
+                  <app-field-error
+                    [id]="'step-error-' + i"
+                    [control]="step"
+                    [path]="'steps[' + i + ']'"
+                    [serverError]="serverError()"
+                  />
+                </div>
                 <div class="step-actions">
                   <button
                     type="button"
                     class="quiet"
                     [disabled]="i === 0"
                     (click)="moveStep(i, -1)"
-                    [attr.aria-label]="'Subir paso ' + (i + 1)"
+                    [attr.aria-label]="i18n.t('recipe.moveStepUp', { index: i18n.number(i + 1) })"
                   >
-                    Subir</button
-                  ><button
+                    {{ i18n.t('action.up') }}
+                  </button>
+                  <button
                     type="button"
                     class="quiet"
                     [disabled]="i === steps.length - 1"
                     (click)="moveStep(i, 1)"
-                    [attr.aria-label]="'Bajar paso ' + (i + 1)"
+                    [attr.aria-label]="i18n.t('recipe.moveStepDown', { index: i18n.number(i + 1) })"
                   >
-                    Bajar</button
-                  ><button
+                    {{ i18n.t('action.down') }}
+                  </button>
+                  <button
                     type="button"
                     class="remove"
-                    [attr.aria-label]="'Quitar paso ' + (i + 1)"
+                    [attr.aria-label]="i18n.t('recipe.removeStep', { index: i18n.number(i + 1) })"
                     (click)="steps.removeAt(i)"
                   >
-                    Quitar
+                    {{ i18n.t('action.remove') }}
                   </button>
                 </div>
               </div>
             }
           </div>
-          <p class="muted">Para publicar necesitarás al menos un ingrediente y un paso.</p>
+          <p class="muted">{{ i18n.t('recipe.publishHelp') }}</p>
         </section>
       </fieldset>
       <div class="actions">
         <button type="submit" [disabled]="busy()">
-          {{ busy() ? 'Guardando…' : 'Guardar borrador' }}
+          {{ i18n.t(busy() ? 'recipe.saving' : 'recipe.save') }}
         </button>
         @if (recipe()) {
-          <button type="button" class="quiet" [disabled]="busy()" (click)="editing.set(false)">
-            Cancelar
+          <button type="button" class="quiet" [disabled]="busy()" (click)="cancelEdit()">
+            {{ i18n.t('action.cancel') }}
           </button>
         }
       </div>
@@ -156,54 +313,50 @@
     <section class="heading compact">
       <div>
         <span class="badge" [class.published]="r.isPublished">{{
-          r.isPublished ? 'Publicada' : 'Borrador'
+          i18n.t(r.isPublished ? 'recipe.published' : 'recipe.draft')
         }}</span>
         @if (r.isHidden) {
-          <span class="badge">Oculta</span>
+          <span class="badge">{{ i18n.t('recipe.hiddenState') }}</span>
         }
         <h1>{{ r.name }}</h1>
         <p>{{ r.description }}</p>
         <div class="recipe-meta">
           @if (r.servings) {
-            <span>{{ r.servings }} raciones</span>
+            <span>{{ i18n.count('count.servings.one', 'count.servings.other', r.servings) }}</span>
           }
           @if (r.preparationMinutes) {
-            <span>{{ r.preparationMinutes }} min</span>
+            <span>{{ i18n.t('count.minutes', { count: i18n.number(r.preparationMinutes) }) }}</span>
           }
-          <span>Versión {{ r.version }}</span>
+          <span>{{ i18n.t('recipe.version', { version: i18n.number(r.version) }) }}</span>
         </div>
       </div>
     </section>
     @if (r.isPublished) {
-      <p class="notice">Esta receta está publicada. Su contenido se conserva sin cambios.</p>
+      <p class="notice">{{ i18n.t('recipe.publishedNotice') }}</p>
     }
     @if (r.isHidden) {
-      <p class="notice">
-        Esta receta está oculta y ya no aparece en el recetario. Puedes seguir consultándola desde
-        esta referencia.
-      </p>
+      <p class="notice">{{ i18n.t('recipe.hiddenNotice') }}</p>
     }
     <div class="detail-grid">
       <section class="panel">
-        <h2>Ingredientes</h2>
+        <h2>{{ i18n.t('field.ingredients') }}</h2>
         <ul class="ingredients">
           @for (i of r.ingredients; track $index) {
             <li>
-              <strong>{{ i.name }}</strong
-              ><span>{{ i.quantity }} {{ unitLabel(i.unit) }}</span>
+              <strong>{{ i.name }}</strong><span>{{ ingredientAmount(i) }}</span>
             </li>
           } @empty {
-            <li>Aún no hay ingredientes.</li>
+            <li>{{ i18n.t('recipe.noIngredients') }}</li>
           }
         </ul>
       </section>
       <section class="panel">
-        <h2>Preparación</h2>
+        <h2>{{ i18n.t('field.steps') }}</h2>
         <ol class="steps">
           @for (step of r.steps; track $index) {
             <li>{{ step }}</li>
           } @empty {
-            <p>Aún no hay pasos de preparación.</p>
+            <li>{{ i18n.t('recipe.noSteps') }}</li>
           }
         </ol>
       </section>
@@ -216,27 +369,33 @@
     @if (!r.isHidden) {
       <div class="actions">
         @if (!r.isPublished) {
-          <button [disabled]="busy()" (click)="edit()">Editar borrador</button
-          ><button class="secondary" [disabled]="busy()" (click)="publish()">
-            Publicar receta
+          <button [disabled]="busy()" (click)="edit()">{{ i18n.t('recipe.edit') }}</button>
+          <button class="secondary" [disabled]="busy()" (click)="publish()">
+            {{ i18n.t('recipe.publish') }}
           </button>
         }
-        <button class="quiet danger" [disabled]="busy()" (click)="confirmHide.set(true)">
-          Ocultar receta
+        <button
+          class="quiet danger"
+          [disabled]="busy()"
+          [attr.aria-expanded]="confirmHide()"
+          aria-controls="hide-confirmation"
+          (click)="askToHide()"
+        >
+          {{ i18n.t('recipe.hide') }}
         </button>
       </div>
     }
     @if (confirmHide()) {
-      <section class="notice" role="alert">
-        <h2>¿Ocultar esta receta?</h2>
-        <p>
-          Dejará de aparecer en el recetario. Las referencias existentes seguirán funcionando. De
-          momento no podrás volver a mostrarla.
-        </p>
+      <section id="hide-confirmation" class="notice" aria-labelledby="hide-confirmation-title">
+        <h2 id="hide-confirmation-title">{{ i18n.t('recipe.confirmHideTitle') }}</h2>
+        <p>{{ i18n.t('recipe.confirmHideText') }}</p>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
         <div class="actions">
-          <button [disabled]="busy()" (click)="hide()">Sí, ocultar</button
-          ><button class="quiet" [disabled]="busy()" (click)="confirmHide.set(false)">
-            Cancelar
+          <button [disabled]="busy()" (click)="hide()">{{ i18n.t('recipe.confirmHide') }}</button>
+          <button class="quiet" [disabled]="busy()" (click)="cancelHide()">
+            {{ i18n.t('action.cancel') }}
           </button>
         </div>
       </section>

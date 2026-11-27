@@ -24,6 +24,22 @@ header {
 a {
   color: inherit;
 }
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+label.language-picker {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+  gap: 10px;
+}
+.language-picker select {
+  width: auto;
+  padding: 7px 10px;
+}
 button,
 input,
 select,
@@ -293,6 +309,26 @@ small {
   color: #748578;
   font-weight: 400;
 }
+app-field-error {
+  display: block;
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.form-field > label {
+  display: block;
+  margin: 0;
+}
+app-field-error:empty {
+  display: none;
+}
+.field-error {
+  color: #8b3927;
+  overflow-wrap: anywhere;
+}
 .two-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -407,7 +443,7 @@ small {
     border-top: 1px solid var(--line);
     padding-top: 16px;
   }
-  .ingredient-row label:first-child {
+  .ingredient-row > .form-field:first-child {
     grid-column: 1/-1;
   }
   .ingredient-row .remove {

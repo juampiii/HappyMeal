@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 export interface Ingredient {
@@ -23,14 +23,14 @@ export interface Recipe extends RecipeInput {
   version: number;
 }
 export const units = [
-  { code: 'g', label: 'gramos' },
-  { code: 'kg', label: 'kilogramos' },
-  { code: 'ml', label: 'mililitros' },
-  { code: 'l', label: 'litros' },
-  { code: 'ud', label: 'unidades' },
-  { code: 'cucharadita', label: 'cucharaditas' },
-  { code: 'cucharada', label: 'cucharadas' },
-];
+  { code: 'g', labelKey: 'unit.g' },
+  { code: 'kg', labelKey: 'unit.kg' },
+  { code: 'ml', labelKey: 'unit.ml' },
+  { code: 'l', labelKey: 'unit.l' },
+  { code: 'ud', labelKey: 'unit.ud' },
+  { code: 'cucharadita', labelKey: 'unit.cucharadita' },
+  { code: 'cucharada', labelKey: 'unit.cucharada' },
+] as const;
 @Injectable({ providedIn: 'root' })
 export class Recipes {
   private http = inject(HttpClient);
@@ -53,31 +53,4 @@ export class Recipes {
   hide(id: string) {
     return firstValueFrom(this.http.delete<void>(`/api/recipes/${id}`));
   }
-}
-export function errorMessage(error: unknown): string {
-  if (!(error instanceof HttpErrorResponse))
-    return 'No se ha podido completar la acción. Inténtalo de nuevo.';
-  if (error.status === 0)
-    return 'No se puede conectar con el recetario. Comprueba la conexión e inténtalo de nuevo.';
-  if (error.status === 404) return 'No se ha encontrado la receta.';
-  if (error.status === 409)
-    return 'El nombre ya existe, la receta ha cambiado o su estado no permite esta acción. Revisa los datos y vuelve a cargarla si es necesario.';
-  if (error.status === 400) {
-    const fields = Object.keys(error.error?.errors ?? {});
-    const labels = fields.map((key) =>
-      key.startsWith('ingredients')
-        ? 'ingredientes (nombre, cantidad positiva, unidad y duplicados)'
-        : key.startsWith('steps')
-          ? 'pasos de preparación'
-          : key === 'name'
-            ? 'nombre'
-            : key === 'servings'
-              ? 'raciones enteras positivas'
-              : key === 'preparationMinutes'
-                ? 'tiempo en minutos enteros positivos'
-                : 'datos introducidos',
-    );
-    return 'Revisa: ' + ([...new Set(labels)].join(', ') || 'los datos introducidos') + '.';
-  }
-  return 'No se han podido guardar los cambios. Tus datos siguen en el formulario; inténtalo de nuevo.';
 }
