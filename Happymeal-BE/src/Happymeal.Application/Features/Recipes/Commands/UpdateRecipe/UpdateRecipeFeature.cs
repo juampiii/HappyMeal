@@ -31,7 +31,9 @@ public static class UpdateRecipeFeature
             }
 
             if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id, cancellationToken))
+            {
                 return Error.Conflict("Recipe name already exists.");
+            }
 
             var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description, command.Ingredients, command.Steps, command.Servings, command.PreparationMinutes, command.Tags));
             if (updateResult.IsFailure)

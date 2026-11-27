@@ -28,6 +28,8 @@ Feature branches use `feature/<issue>-<description>` (for example: `feature/14-a
 
 ## Hard rules
 
+- Always use braces for every C# `if` and `else`, including single statements.
+
 - Do not add Aspire, MediatR, MassTransit, or packages with a commercial license such as FluentAssertions 8+. Shared building blocks go in `src/Happymeal.Common`.
 - Ask before adding any production package. Domain has no third-party packages: params implement `IValidatable` and rules are written by hand. No FluentValidation.
 - Handlers return `Result`/`Result<T>` with an `Error`. Errors are ProblemDetails. Validation errors are `400 ValidationProblemDetails`.

@@ -39,7 +39,9 @@ public static class CreateRecipeFeature
             }
 
             if (await unitOfWork.RecipeRepository.NameExistsAsync(RecipeName.Key(command.Name), command.Id ?? id, cancellationToken))
+            {
                 return Error.Conflict("Recipe name already exists.");
+            }
 
             var recipe = createResult.Value;
             unitOfWork.RecipeRepository.Add(recipe);
