@@ -34,9 +34,13 @@ Compose reads the database password from `.env`; the password in `appsettings.De
 - `AddDbContext<HappymealDbContext>` is scoped, with retries on (`EnableRetryOnFailure`) and the `AuditableInterceptor`. The outbox dispatcher creates its own scope per batch.
 - `OnModelCreating` configures the audit columns of every `IAuditable` entity (`CreatedBy` required, both user columns max `IAuditable.UserMaxLength`).
 - Recipe names use the `happymeal_recipe_name` ICU collation (`und-u-ks-level1`,
-  non-deterministic) and a unique index on `Name`. Trim names in Domain and compare
+  non-deterministic) and a partial unique index on `Name` for visible recipes
+  (`IsHidden = FALSE`). Hidden recipes release their name. Trim names in Domain and compare
   them directly in SQL; there is no derived name key. PostgreSQL 18 supports `LIKE`
   with this collation, but not `ILIKE`. Other text columns retain their own collation.
+- The migration role needs `CREATE` on `public` for the recipe collation (the
+  database owner has this in the current Docker setup). A runtime-only role does
+  not need that permission when migrations are executed separately.
 - `timestamptz` columns only accept `DateTimeOffset` values with a UTC offset. Always take time from `TimeProvider.GetUtcNow()`.
 
 ## Audit Fields

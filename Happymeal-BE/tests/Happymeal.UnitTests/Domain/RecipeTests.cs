@@ -58,7 +58,7 @@ public class RecipeTests
         // Arrange
         var content = new RecipeParams(
             Name: "Soup",
-            Tags: ["  quick  ", "", " ", "quick", "vegan"]);
+            Tags: ["  quick  ", "", " ", "QUICK", "Quick", "vegan"]);
 
         // Act
         var result = Recipe.Create(Guid.CreateVersion7(), content);

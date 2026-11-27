@@ -10,6 +10,10 @@ public sealed class Recipe : AggregateRoot, IAuditable
 {
     public const int NameMaxLength = 200;
     public const int DescriptionMaxLength = 2000;
+    public const int IngredientsMaxCount = 100;
+    public const int StepsMaxCount = 100;
+    public const int TagsMaxCount = 20;
+    public const int TagsMaxInputCount = 100;
 
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
@@ -126,7 +130,7 @@ public sealed class Recipe : AggregateRoot, IAuditable
         _tags = [.. (parameters.Tags ?? [])
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Select(name => name.Trim())
-            .Distinct()
+            .Distinct(RecipeTag.NameComparer)
             .Select(name => new RecipeTag(name))];
         Servings = parameters.Servings;
         PreparationMinutes = parameters.PreparationMinutes;

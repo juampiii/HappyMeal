@@ -10,8 +10,7 @@ public sealed class LogRecipeLifecycleDomainEventHandler(ILogger<LogRecipeLifecy
     IDomainEventHandler<RecipeCreatedDomainEvent>,
     IDomainEventHandler<RecipeUpdatedDomainEvent>,
     IDomainEventHandler<RecipePublishedDomainEvent>,
-    IDomainEventHandler<RecipeHiddenDomainEvent>,
-    IDomainEventHandler<RecipeDeletedDomainEvent>
+    IDomainEventHandler<RecipeHiddenDomainEvent>
 {
     public Task<Result> HandleAsync(
         RecipeCreatedDomainEvent domainEvent,
@@ -33,15 +32,6 @@ public sealed class LogRecipeLifecycleDomainEventHandler(ILogger<LogRecipeLifecy
         return Task.FromResult(Result.Success());
     }
 
-    public Task<Result> HandleAsync(
-        RecipeDeletedDomainEvent domainEvent,
-        Guid correlationId,
-        CancellationToken cancellationToken = default)
-    {
-        logger.LogInformation("Recipe {RecipeId} deleted (correlation {CorrelationId}).",
-            domainEvent.RecipeId, correlationId);
-        return Task.FromResult(Result.Success());
-    }
     public Task<Result> HandleAsync(RecipePublishedDomainEvent domainEvent, Guid correlationId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Recipe {RecipeId} version {Version} published (correlation {CorrelationId}).", domainEvent.RecipeId, domainEvent.Version, correlationId);

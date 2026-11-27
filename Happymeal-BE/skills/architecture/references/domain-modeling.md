@@ -17,8 +17,9 @@ when identity within the owning recipe is sufficient.
   plus its position. Keep positions explicit and order the public step view by
   position; database row order is never a domain guarantee.
 - A tag has `Name`. Its identity for persistence is the recipe plus its name.
-  Tags have no preparation order. Preserve the agreed trimming and distinct-name
-  behavior; a shared tag catalog is a separate business capability.
+  Tags have no preparation order. Ignore blank tags and trim names. Deduplicate
+  with `OrdinalIgnoreCase`, retaining the first spelling; accents remain distinct.
+  A shared tag catalog is a separate business capability.
 - `UnitOfMeasure` is an immutable value object identified by its valid code.
   Ownership of a collection element does not imply that every value inside it
   needs entity identity or its own table.
@@ -26,6 +27,18 @@ when identity within the owning recipe is sufficient.
 These decisions do not require turning every string or primitive list into an
 entity. Choose a value object, owned element or primitive based on its domain
 meaning, invariants and lifecycle. Keep dependencies on EF out of Domain.
+
+Validate text lengths and collection counts in Domain before constructing owned
+elements, and configure matching column lengths in Infrastructure. Recipe limits
+are 100 ingredients (names up to 200 characters), 100 steps (content up to 2,000)
+and 20 distinct nonempty tags (names up to 50). Limit the incoming tag list to 100
+entries before ignoring blanks or duplicates. Keep limits as named constants.
+Domain validation measures the trimmed text which will actually be stored.
+
+Hiding a recipe releases its name. Visible names remain unique under the recipe
+collation, enforced by both the repository precheck and a partial unique index
+excluding hidden rows. Hidden recipes remain accessible by ID. `Version` stays 1
+until creating a new version is implemented; draft edits do not increment it.
 
 ## Persistence should follow the domain clearly
 

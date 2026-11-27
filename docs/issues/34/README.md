@@ -6,6 +6,10 @@
 **Implementation status:** Completed and verified locally
 **Origin:** Backend review amendment agreed before implementation
 
+**Current migration history:** `InitialCreate` followed by `ManageRecipes`.
+The later consolidation amendment supersedes the intermediate migration strategy
+described below; earlier agreed plans and verification records are retained.
+
 This document records the unit-of-measure amendment to story #34. Its completion
 status applies to this amendment, not the complete shared recipe-book release.
 
@@ -196,3 +200,106 @@ Implemented and verified locally: solution build with enforced style passed
 (existing IDE0005 documentation-generation warnings only), and all 42 PostgreSQL
 integration tests passed. Existing tests verify listing contents, hidden-recipe
 filtering, step ordering and detail responses. `git diff --check` passed.
+
+## Review amendment — Visible names, content limits and tag normalization
+
+**Agreement date:** 2026-11-27
+
+The user approved four review follow-ups: hiding releases a recipe's name; owned
+content needs length/count limits; tags ignore blank values and deduplicate case
+variants; remove obsolete deletion events because there are no historical outbox
+messages to retain. Keep `Version = 1`: new-version creation remains out of scope.
+No change to collation placement or the other review findings was agreed here.
+
+Apply a visible-only name precheck and matching partial unique index. Preserve
+case/accent-insensitive uniqueness among visible recipes and access to hidden
+recipes by ID. Validate limits in Domain before mutation and configure matching
+column lengths: 100 ingredients with names up to 200 characters, 100 steps up to
+2,000 characters each, and 20 distinct nonempty tags up to 50 characters each.
+Use trimmed text lengths. Ignore blank tags and collapse case variants using
+`OrdinalIgnoreCase`, keeping the first spelling; accents remain distinct.
+
+Introduce these storage changes with a forward migration. Overlength legacy data
+causes migration failure rather than silent truncation. A downgrade reinstates
+global name uniqueness, so it can fail if a released hidden name has been reused;
+resolve those duplicate names before downgrading. No application database is
+migrated automatically as part of this implementation.
+
+Verify maximum accepted lengths/counts and rejection just above each limit, error
+paths and unchanged aggregate state after rejected edits. Exercise HTTP/database
+name reuse after hiding, continued visibility rules, database uniqueness, oversized
+tags returning 400, persisted tag deduplication and migration/model consistency.
+
+Implemented and verified locally: build with enforced style passed (existing
+IDE0005 documentation-generation warnings only); 77 unit tests and 46 PostgreSQL
+integration tests passed. Existing migration upgrade/downgrade and model-snapshot
+checks pass with the new migration. New coverage exercises maximum lengths/counts,
+rejected fields, ignored blank/case-duplicate tags, failed-update atomicity,
+visible-name reuse through HTTP and directly through the database, and oversized
+tag validation before persistence. The obsolete event and handler overload were
+removed; the remaining lifecycle handler is retained. No commit, push or application
+database migration was performed as part of these follow-ups.
+
+## Review amendment — Specific persistence conflicts and owned loading
+
+On 2026-11-27, the user approved translating known unique constraints separately
+and removing redundant owned-collection includes. Map `Happymeal.Recipes` violations
+of `IX_Recipes_Name` to a name conflict and `PK_Recipes` to an ID conflict. Keep
+concurrency handling unchanged. Other constraint failures remain unexpected errors
+for the API exception handler rather than being mislabeled as name/ID conflicts.
+Verify actual database constraints and transaction rollback, plus propagation of
+an unrelated uniqueness failure.
+
+Remove the explicit ingredient includes from list and detail queries because EF
+loads owned elements automatically. Preserve split-query behavior only on listing,
+tracked detail loading, all response content and visibility rules. The user deferred
+separating `IngredientParams` from the HTTP contract; leave that contract unchanged.
+
+Implemented and verified locally: build with enforced style passed (existing
+IDE0005 documentation-generation warnings only), 78 unit tests and 48 PostgreSQL
+integration tests passed. New database tests bypass prechecks to exercise both
+named constraints, verify the specific conflict message, tracker clearing and
+rollback of recipe/outbox writes. A unit test verifies an unrelated unique
+constraint failure is propagated. Existing detail/list tests verify owned content
+still loads after removing explicit includes. `git diff --check` passed.
+
+## Review amendment — Consolidate unreleased migrations and bound tag input
+
+On 2026-11-27, the user requested replacing all four unreleased feature migrations
+with a single migration. Preserve `20261031120108_InitialCreate` unchanged and
+generate `ManageRecipes` directly from its model to the current model. This
+supersedes the earlier forward-migration strategy: intermediate storage states,
+`NameKey`, generated Unicode backfill and array conversions are no longer needed
+for this first release. Keep the original decisions above as review history.
+
+The single feature migration creates owned ingredients, steps and tags with their
+final limits, the recipe lifecycle fields and concurrency token, and the visible-only
+name index with the ICU collation. Existing baseline names have ordinary outer
+spaces trimmed before uniqueness is enforced. Legacy rows start at version 1.
+Downgrade removes feature content and preserves baseline recipe fields; remove
+the column's collation dependency before dropping the collation itself.
+
+Add a separate maximum of 100 incoming tag entries, checked before normalization;
+retain the maximum of 20 distinct nonempty tags. Blank and duplicate entries count
+towards the input cap but are ignored within an accepted request. Reuse the existing
+coverage for content limits, hidden-name reuse and conflict messages, and add raw
+input boundary/HTTP tests. Rewrite migration tests for direct upgrade from
+`InitialCreate`, collision rollback, downgrade and reapplication.
+
+`IngredientParams` remains unchanged as previously agreed. The collation remains
+in `public`; the migration role needs permission to create it there. This change
+does not provision roles or change the deployment privilege model.
+
+Only disposable test databases are changed. An existing development database with
+any removed migration applied must be returned to the baseline using the old
+migrations or recreated before applying the consolidated history; changing source
+files does not rewrite an already-applied database history.
+
+Implemented and verified locally: build with enforced style passed (existing
+IDE0005 documentation-generation warning only), 80 unit tests and 49 PostgreSQL
+integration tests passed. Coverage includes the raw tag cap at 100/101 entries,
+HTTP 400 for oversized raw lists, direct baseline upgrade, collision rollback,
+downgrade preserving baseline fields, reapplication and model/snapshot agreement.
+`InitialCreate` is unchanged and only one feature migration remains. The new
+migration contains no derived name key, intermediate array columns or generated
+Unicode backfill. `git diff --check` passed. No commit or push was performed.

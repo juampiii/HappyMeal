@@ -2,6 +2,8 @@ namespace Happymeal.Domain;
 
 public sealed class RecipeIngredient
 {
+    public const int NameMaxLength = 200;
+
     public int Position { get; private set; }
     public string Name { get; private set; } = null!;
     public decimal? Quantity { get; private set; }

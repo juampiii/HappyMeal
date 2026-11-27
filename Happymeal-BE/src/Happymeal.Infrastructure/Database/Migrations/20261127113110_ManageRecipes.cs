@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Globalization;
-using System.Text;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,11 +6,26 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Happymeal.Infrastructure.Database.Migrations
 {
     /// <inheritdoc />
-    public partial class RecipeLifecycle : Migration
+    public partial class ManageRecipes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:CollationDefinition:public.happymeal_recipe_name", "und-u-ks-level1,und-u-ks-level1,icu,False");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: "Happymeal",
+                table: "Recipes",
+                type: "character varying(200)",
+                maxLength: 200,
+                nullable: false,
+                collation: "happymeal_recipe_name",
+                oldClrType: typeof(string),
+                oldType: "character varying(200)",
+                oldMaxLength: 200);
+
             migrationBuilder.AddColumn<bool>(
                 name: "IsHidden",
                 schema: "Happymeal",
@@ -29,14 +42,6 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 nullable: false,
                 defaultValue: false);
 
-            migrationBuilder.AddColumn<string>(
-                name: "NameKey",
-                schema: "Happymeal",
-                table: "Recipes",
-                type: "text",
-                nullable: false,
-                defaultValue: "");
-
             migrationBuilder.AddColumn<int>(
                 name: "PreparationMinutes",
                 schema: "Happymeal",
@@ -50,22 +55,6 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 table: "Recipes",
                 type: "integer",
                 nullable: true);
-
-            migrationBuilder.AddColumn<string[]>(
-                name: "Steps",
-                schema: "Happymeal",
-                table: "Recipes",
-                type: "text[]",
-                nullable: false,
-                defaultValue: new string[0]);
-
-            migrationBuilder.AddColumn<string[]>(
-                name: "Tags",
-                schema: "Happymeal",
-                table: "Recipes",
-                type: "text[]",
-                nullable: false,
-                defaultValue: new string[0]);
 
             migrationBuilder.AddColumn<int>(
                 name: "Version",
@@ -91,7 +80,7 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 {
                     Position = table.Column<int>(type: "integer", nullable: false),
                     RecipeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Quantity = table.Column<decimal>(type: "numeric", nullable: true),
                     Unit = table.Column<string>(type: "text", nullable: true)
                 },
@@ -107,45 +96,58 @@ namespace Happymeal.Infrastructure.Database.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.Sql(NameBackfillSql());
+            migrationBuilder.CreateTable(
+                name: "RecipeSteps",
+                schema: "Happymeal",
+                columns: table => new
+                {
+                    Position = table.Column<int>(type: "integer", nullable: false),
+                    RecipeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Content = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecipeSteps", x => new { x.RecipeId, x.Position });
+                    table.ForeignKey(
+                        name: "FK_RecipeSteps_Recipes_RecipeId",
+                        column: x => x.RecipeId,
+                        principalSchema: "Happymeal",
+                        principalTable: "Recipes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RecipeTags",
+                schema: "Happymeal",
+                columns: table => new
+                {
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    RecipeId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecipeTags", x => new { x.RecipeId, x.Name });
+                    table.ForeignKey(
+                        name: "FK_RecipeTags_Recipes_RecipeId",
+                        column: x => x.RecipeId,
+                        principalSchema: "Happymeal",
+                        principalTable: "Recipes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.Sql("""
+                UPDATE "Happymeal"."Recipes" SET "Name" = btrim("Name");
+                """);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Recipes_NameKey",
+                name: "IX_Recipes_Name",
                 schema: "Happymeal",
                 table: "Recipes",
-                column: "NameKey",
-                unique: true);
-        }
-
-        // Freeze the same Unicode decomposition, mark removal and invariant case mapping
-        // used at runtime. SQL performs the row update without reading data outside the
-        // migration transaction; the unique index aborts the migration on collisions.
-        internal static string NameBackfillSql()
-        {
-            var source = new StringBuilder();
-            var target = new StringBuilder();
-            var marks = new StringBuilder();
-            for (var code = 1; code <= 0x10ffff; code++)
-            {
-                if (!Rune.IsValid(code))
-                {
-                    continue;
-                }
-                var rune = new Rune(code);
-                if (Rune.GetUnicodeCategory(rune) == UnicodeCategory.NonSpacingMark)
-                {
-                    marks.Append(rune);
-                }
-                else if (Rune.ToUpperInvariant(rune) != rune)
-                {
-                    source.Append(rune);
-                    target.Append(Rune.ToUpperInvariant(rune));
-                }
-            }
-            var whitespace = string.Concat(Enumerable.Range(1, char.MaxValue).Select(x => (char)x).Where(char.IsWhiteSpace));
-            static string Quote(string value) => "'" + value.Replace("'", "''") + "'";
-            return "UPDATE \"Happymeal\".\"Recipes\" SET \"NameKey\" = translate(normalize(btrim(\"Name\", "
-                + Quote(whitespace) + "), NFD), " + Quote(source.ToString() + marks) + ", " + Quote(target.ToString()) + ");";
+                column: "Name",
+                unique: true,
+                filter: "\"IsHidden\" = FALSE");
         }
 
         /// <inheritdoc />
@@ -155,8 +157,16 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 name: "RecipeIngredients",
                 schema: "Happymeal");
 
+            migrationBuilder.DropTable(
+                name: "RecipeSteps",
+                schema: "Happymeal");
+
+            migrationBuilder.DropTable(
+                name: "RecipeTags",
+                schema: "Happymeal");
+
             migrationBuilder.DropIndex(
-                name: "IX_Recipes_NameKey",
+                name: "IX_Recipes_Name",
                 schema: "Happymeal",
                 table: "Recipes");
 
@@ -171,27 +181,12 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 table: "Recipes");
 
             migrationBuilder.DropColumn(
-                name: "NameKey",
-                schema: "Happymeal",
-                table: "Recipes");
-
-            migrationBuilder.DropColumn(
                 name: "PreparationMinutes",
                 schema: "Happymeal",
                 table: "Recipes");
 
             migrationBuilder.DropColumn(
                 name: "Servings",
-                schema: "Happymeal",
-                table: "Recipes");
-
-            migrationBuilder.DropColumn(
-                name: "Steps",
-                schema: "Happymeal",
-                table: "Recipes");
-
-            migrationBuilder.DropColumn(
-                name: "Tags",
                 schema: "Happymeal",
                 table: "Recipes");
 
@@ -204,6 +199,21 @@ namespace Happymeal.Infrastructure.Database.Migrations
                 name: "xmin",
                 schema: "Happymeal",
                 table: "Recipes");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: "Happymeal",
+                table: "Recipes",
+                type: "character varying(200)",
+                maxLength: 200,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(200)",
+                oldMaxLength: 200,
+                oldCollation: "happymeal_recipe_name");
+
+            migrationBuilder.AlterDatabase()
+                .OldAnnotation("Npgsql:CollationDefinition:public.happymeal_recipe_name", "und-u-ks-level1,und-u-ks-level1,icu,False");
         }
     }
 }

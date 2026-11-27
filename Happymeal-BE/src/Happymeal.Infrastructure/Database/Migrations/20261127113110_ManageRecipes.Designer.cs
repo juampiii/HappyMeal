@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Happymeal.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(HappymealDbContext))]
-    [Migration("20261127104612_RecipeOwnedStepsAndTags")]
-    partial class RecipeOwnedStepsAndTags
+    [Migration("20261127113110_ManageRecipes")]
+    partial class ManageRecipes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,6 +21,7 @@ namespace Happymeal.Infrastructure.Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Happymeal")
+                .HasAnnotation("Npgsql:CollationDefinition:public.happymeal_recipe_name", "und-u-ks-level1,und-u-ks-level1,icu,False")
                 .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -59,11 +60,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("NameKey")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(200)")
+                        .UseCollation("happymeal_recipe_name");
 
                     b.Property<int?>("PreparationMinutes")
                         .HasColumnType("integer");
@@ -82,8 +80,9 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NameKey")
-                        .IsUnique();
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"IsHidden\" = FALSE");
 
                     b.ToTable("Recipes", "Happymeal");
                 });
@@ -144,7 +143,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                             b1.Property<string>("Name")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)");
 
                             b1.Property<decimal?>("Quantity")
                                 .HasColumnType("numeric");
@@ -170,7 +170,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                             b1.Property<string>("Content")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasMaxLength(2000)
+                                .HasColumnType("character varying(2000)");
 
                             b1.HasKey("RecipeId", "Position");
 
@@ -186,7 +187,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Name")
-                                .HasColumnType("text");
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)");
 
                             b1.HasKey("RecipeId", "Name");
 

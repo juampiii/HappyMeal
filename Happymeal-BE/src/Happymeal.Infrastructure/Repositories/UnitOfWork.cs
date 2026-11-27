@@ -24,16 +24,27 @@ internal sealed class UnitOfWork(
 
     public async Task<Result<bool>> TrySaveEntitiesAsync(CancellationToken cancellationToken = default)
     {
-        try { return Result.Success(await SaveEntitiesAsync(cancellationToken)); }
+        try
+        {
+            return Result.Success(await SaveEntitiesAsync(cancellationToken));
+        }
         catch (DbUpdateConcurrencyException)
         {
             dbContext.ChangeTracker.Clear();
             return Error.Conflict("Recipe changed concurrently. Reload it and try again.");
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            SchemaName: HappymealDbContext.Schema,
+            TableName: "Recipes",
+            ConstraintName: "IX_Recipes_Name" or "PK_Recipes"
+        } violation)
         {
             dbContext.ChangeTracker.Clear();
-            return Error.Conflict("Recipe name or id already exists.");
+            return Error.Conflict(violation.ConstraintName == "IX_Recipes_Name"
+                ? "Recipe name already exists."
+                : "Recipe id already exists.");
         }
     }
 

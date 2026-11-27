@@ -20,7 +20,9 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
 
         builder.Property(r => r.Description)
             .HasMaxLength(Recipe.DescriptionMaxLength);
-        builder.HasIndex(r => r.Name).IsUnique();
+        builder.HasIndex(r => r.Name)
+            .IsUnique()
+            .HasFilter("\"IsHidden\" = FALSE");
         builder.Property(r => r.Revision).IsRowVersion();
         builder.OwnsMany(r => r.Steps, steps =>
         {
@@ -28,7 +30,9 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
             steps.WithOwner().HasForeignKey("RecipeId");
             steps.HasKey("RecipeId", nameof(RecipeStep.Position));
             steps.Property(step => step.Position).ValueGeneratedNever();
-            steps.Property(step => step.Content).IsRequired();
+            steps.Property(step => step.Content)
+                .HasMaxLength(RecipeStep.ContentMaxLength)
+                .IsRequired();
         });
         builder.Navigation(r => r.Steps).UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -37,7 +41,9 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
             tags.ToTable("RecipeTags");
             tags.WithOwner().HasForeignKey("RecipeId");
             tags.HasKey("RecipeId", nameof(RecipeTag.Name));
-            tags.Property(tag => tag.Name).IsRequired();
+            tags.Property(tag => tag.Name)
+                .HasMaxLength(RecipeTag.NameMaxLength)
+                .IsRequired();
         });
         builder.Navigation(r => r.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -47,7 +53,9 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
             ingredients.WithOwner().HasForeignKey("RecipeId");
             ingredients.HasKey("RecipeId", nameof(RecipeIngredient.Position));
             ingredients.Property(x => x.Position).ValueGeneratedNever();
-            ingredients.Property(x => x.Name).IsRequired();
+            ingredients.Property(x => x.Name)
+                .HasMaxLength(RecipeIngredient.NameMaxLength)
+                .IsRequired();
             ingredients.Property(x => x.Quantity).HasColumnType("numeric");
             ingredients.Property(x => x.Unit)
                 .HasConversion(

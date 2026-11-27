@@ -9,7 +9,7 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
 {
     public Task<Recipe?> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return dbContext.Recipes.Include(r => r.Ingredients).FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        return dbContext.Recipes.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -20,7 +20,6 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
     public async Task<IReadOnlyList<Recipe>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Recipes
-            .Include(r => r.Ingredients)
             .Where(r => !r.IsHidden)
             .AsNoTracking()
             .AsSplitQuery()
@@ -34,5 +33,5 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
     }
 
     public Task<bool> NameExistsAsync(string name, Guid exceptId, CancellationToken cancellationToken = default)
-        => dbContext.Recipes.AnyAsync(r => r.Id != exceptId && r.Name == name, cancellationToken);
+        => dbContext.Recipes.AnyAsync(r => !r.IsHidden && r.Id != exceptId && r.Name == name, cancellationToken);
 }

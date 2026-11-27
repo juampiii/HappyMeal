@@ -78,7 +78,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"IsHidden\" = FALSE");
 
                     b.ToTable("Recipes", "Happymeal");
                 });
@@ -139,7 +140,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                             b1.Property<string>("Name")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)");
 
                             b1.Property<decimal?>("Quantity")
                                 .HasColumnType("numeric");
@@ -165,7 +167,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
 
                             b1.Property<string>("Content")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasMaxLength(2000)
+                                .HasColumnType("character varying(2000)");
 
                             b1.HasKey("RecipeId", "Position");
 
@@ -181,7 +184,8 @@ namespace Happymeal.Infrastructure.Database.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Name")
-                                .HasColumnType("text");
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)");
 
                             b1.HasKey("RecipeId", "Name");
 
