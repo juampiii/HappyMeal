@@ -4,7 +4,7 @@
 
 ## Skills
 
-Use the [skill index](skills/INDEX.md) to choose a skill for the task. Read the architecture skill before designing or reviewing a feature. Open the selected skill's `SKILL.md` and follow its relative links to the references that apply.
+Use the [skill index](skills/INDEX.md) to choose a skill for the task. Read the architecture skill before designing or reviewing a feature. Read [code-style](skills/code-style/SKILL.md) when writing or reviewing C# code and tests. Open the selected skill's `SKILL.md` and follow its relative links to the references that apply.
 
 For feature planning and closure, apply [plan-feature](../../AITools/skills/planning/plan-feature/SKILL.md)
 as described in the repository's [root instructions](../AGENTS.md).
@@ -27,19 +27,6 @@ Integration tests need Docker and are slow. Run them only after asking.
 Feature branches use `feature/<issue>-<description>` (for example: `feature/14-automate-testing`).
 
 ## Hard rules
-
-- When a parameter declaration spans multiple lines, start the parameters on the
-  line after the opening parenthesis and place one parameter per line.
-- Keep tests readable: use descriptive setup/response variables, separate Arrange,
-  Act and Assert, and give each test one main behavior. Keep validation tests in
-  params test classes rather than mixing them into lifecycle tests.
-- Always use braces for every C# `if` and `else` body, including single statements.
-- For nontrivial params validation, prefer small private methods named after the
-  rules they validate, composed with `Concat` in `Validate()` to collect all errors.
-  Resolve nullable collections once locally (`var steps = Steps ?? [];`). When
-  error paths need element indices, a simple indexed loop is preferred over a LINQ
-  pipeline that adds tuples only to retain those indices. Use LINQ when it makes
-  the validation easier to read.
 
 - Do not add Aspire, MediatR, MassTransit, or packages with a commercial license such as FluentAssertions 8+. Shared building blocks go in `src/Happymeal.Common`.
 - Ask before adding any production package. Domain has no third-party packages: params implement `IValidatable` and rules are written by hand. No FluentValidation.

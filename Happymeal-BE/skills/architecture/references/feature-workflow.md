@@ -55,7 +55,8 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 ## 6. Expose Through the API
 
 - Add the action to the feature controller in `Controllers/`. Name it `<Verb>Async`.
-- Build `<Name>Feature.Command` or `<Name>Feature.Query` from route and body and call `sender.SendAsync(...)`, for example `sender.SendAsync(new GetRecipeByIdFeature.Query(id), cancellationToken)`.
+- Map request DTOs to commands through a static API `<Entity>Mapper` with `MapToCommand` overloads, passing route identifiers explicitly. Store the result in a `command` variable before calling `sender.SendAsync(command, cancellationToken)`. The mapper contains the named field-by-field constructor arguments; validation and normalization stay in Domain.
+- Simple identifier-only commands and queries can be constructed directly, for example `sender.SendAsync(new GetRecipeByIdFeature.Query(id), cancellationToken)`.
 - Return `this.ToActionResult(result)`. Use the `onSuccess` overload for `201 Created` and give the target action `[ActionName(nameof(...))]`.
 - Add `[ProducesResponseType<T>]` for the success type and `ProblemDetails`/`ValidationProblemDetails` for the errors.
 
