@@ -111,7 +111,7 @@ None that prevents closing the issue. Two optional improvements remain: run scen
 
 ## 7. Final technical reference
 
-- [Shared instructions](../../../Happymeal-BE/skills/refine-feature/SKILL.md).
+- [Shared instructions](../../../../AITools/skills/planning/refine-feature/SKILL.md) (centralized in the sibling AITools repository after this issue was closed).
 - [Claude Code entry](../../../Happymeal-BE/.claude/skills/refine-feature/SKILL.md).
 - [Skill index](../../../Happymeal-BE/skills/INDEX.md).
 - [Validation scenarios](validation.md).
