@@ -1,3 +1,4 @@
+using Happymeal.Domain;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Common.Results;
@@ -16,7 +17,7 @@ public static class GetRecipeByIdFeature
         {
             var recipe = await unitOfWork.RecipeRepository.GetAsync(query.Id, cancellationToken);
             return recipe is null
-                ? Error.NotFound($"Recipe {query.Id} was not found.")
+                ? Error.NotFound($"Recipe {query.Id} was not found.", RecipeErrorCodes.NotFound)
                 : Result.Success(RecipeDto.From(recipe));
         }
     }

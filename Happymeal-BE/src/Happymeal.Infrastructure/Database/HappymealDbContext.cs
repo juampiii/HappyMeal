@@ -8,6 +8,7 @@ namespace Happymeal.Infrastructure.Database;
 public class HappymealDbContext : DbContext
 {
     public const string Schema = "Happymeal";
+    public const string RecipeNameCollation = "happymeal_recipe_name";
 
     public DbSet<Recipe> Recipes { get; set; } = null!;
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
@@ -19,6 +20,12 @@ public class HappymealDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
+        modelBuilder.HasCollation(
+            schema: "public",
+            name: RecipeNameCollation,
+            locale: "und-u-ks-level1",
+            provider: "icu",
+            deterministic: false);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HappymealDbContext).Assembly);
         ConfigureAuditFields(modelBuilder);
     }

@@ -1,5 +1,6 @@
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
+using Happymeal.Application.Features.Recipes.Mappers;
 using Happymeal.Common.Results;
 using Happymeal.Domain;
 using Happymeal.Domain.Params;
@@ -9,7 +10,15 @@ namespace Happymeal.Application.Features.Recipes.Commands.CreateRecipe;
 public static class CreateRecipeFeature
 {
     /// <param name="Id">Optional id chosen by the client. The handler generates one when it is null.</param>
-    public sealed record Command(Guid? Id, string Name, string? Description) : ICommand<RecipeDto>;
+    public sealed record Command(
+        Guid? Id,
+        string Name,
+        string? Description = null,
+        IReadOnlyList<IngredientParams>? Ingredients = null,
+        IReadOnlyList<string>? Steps = null,
+        int? Servings = null,
+        int? PreparationMinutes = null,
+        IReadOnlyList<string>? Tags = null) : ICommand<RecipeDto>;
 
     public sealed class Handler(IUnitOfWork unitOfWork) : ICommandHandler<Command, RecipeDto>
     {
@@ -19,24 +28,34 @@ public static class CreateRecipeFeature
         {
             var id = command.Id ?? Guid.CreateVersion7();
 
-            var createResult = Recipe.Create(id, new RecipeParams(command.Name, command.Description));
+            var parameters = RecipeMapper.MapToParams(command);
+            var createResult = Recipe.Create(id, parameters);
             if (createResult.IsFailure)
             {
                 return createResult.Error!;
             }
 
-            // TODO: two concurrent requests with the same id can both pass this check; the second one fails on the primary key.
             if (await unitOfWork.RecipeRepository.ExistsAsync(id, cancellationToken))
             {
-                return Error.Conflict($"Recipe {id} already exists.");
+                return Error.Conflict($"Recipe {id} already exists.", RecipeErrorCodes.IdAlreadyExists);
+            }
+
+            if (await unitOfWork.RecipeRepository.NameExistsAsync(createResult.Value.Name, id, cancellationToken))
+            {
+                return Error.Conflict("Recipe name already exists.", RecipeErrorCodes.NameAlreadyExists);
             }
 
             var recipe = createResult.Value;
             unitOfWork.RecipeRepository.Add(recipe);
 
-            var wasSaved = await unitOfWork.SaveEntitiesAsync(cancellationToken);
+            var saved = await unitOfWork.TrySaveEntitiesAsync(cancellationToken);
+            if (saved.IsFailure)
+            {
+                return saved.Error!;
+            }
+            var wasSaved = saved.Value;
             return !wasSaved
-                ? Error.Failure("Recipe could not be persisted.")
+                ? Error.Failure("Recipe could not be persisted.", RecipePersistenceErrorCodes.SaveFailed)
                 : Result.Success(RecipeDto.From(recipe));
         }
     }

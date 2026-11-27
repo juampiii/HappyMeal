@@ -15,6 +15,7 @@ public class CreateRecipeCommandHandlerTests
     public CreateRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
         _sut = new CreateRecipeFeature.Handler(_unitOfWork);
     }
 
@@ -24,7 +25,7 @@ public class CreateRecipeCommandHandlerTests
         // Arrange
         var id = Guid.CreateVersion7();
         _unitOfWork.RecipeRepository.ExistsAsync(id, Arg.Any<CancellationToken>()).Returns(false);
-        _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
 
         // Act
         var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(id, "Burger", "With fries"), CancellationToken.None);
@@ -38,7 +39,7 @@ public class CreateRecipeCommandHandlerTests
             r.Id == id
             && r.GetDomainEvents().Count == 1
             && r.GetDomainEvents().First() is RecipeCreatedDomainEvent));
-        await _unitOfWork.Received(1).SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -46,7 +47,7 @@ public class CreateRecipeCommandHandlerTests
     {
         // Arrange
         _unitOfWork.RecipeRepository.ExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(false);
-        _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
 
         // Act
         var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(null, "Burger", null), CancellationToken.None);
@@ -68,7 +69,7 @@ public class CreateRecipeCommandHandlerTests
         result.Error!.Type.Should().Be(ErrorType.Validation);
         result.Error.ValidationErrors.Should().ContainKey(nameof(RecipeParams.Name));
         _unitOfWork.RecipeRepository.DidNotReceive().Add(Arg.Any<Recipe>());
-        await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -85,7 +86,7 @@ public class CreateRecipeCommandHandlerTests
         result.IsFailure.Should().BeTrue();
         result.Error!.Type.Should().Be(ErrorType.Conflict);
         _unitOfWork.RecipeRepository.DidNotReceive().Add(Arg.Any<Recipe>());
-        await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -93,7 +94,7 @@ public class CreateRecipeCommandHandlerTests
     {
         // Arrange
         _unitOfWork.RecipeRepository.ExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(false);
-        _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(false);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(false));
 
         // Act
         var result = await _sut.HandleAsync(new CreateRecipeFeature.Command(null, "Burger", null), CancellationToken.None);

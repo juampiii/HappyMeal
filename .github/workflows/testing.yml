@@ -2,7 +2,7 @@ name: HappyMeal testing
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, feature/34-manage-recipes]
   push:
     branches: [develop]
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           global-json-file: Happymeal-BE/global.json
       - name: Build
         working-directory: Happymeal-BE
-        run: dotnet build Happymeal.slnx -c Release
+        run: dotnet build Happymeal.slnx -c Release -p:EnforceCodeStyleInBuild=true
       - name: Unit tests
         working-directory: Happymeal-BE
         run: dotnet test --project tests/Happymeal.UnitTests -c Release --no-build

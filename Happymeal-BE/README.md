@@ -67,7 +67,11 @@ See the [build and deployment guide](docs/learning/02-docker-compose-build-and-d
 | PUT | `/api/recipes/{id}` | 200, 400, 404 |
 | DELETE | `/api/recipes/{id}` | 204, 404 |
 
-Create, update and delete raise `RecipeCreatedDomainEvent`, `RecipeUpdatedDomainEvent` and `RecipeDeletedDomainEvent`. They are stored in the `Happymeal.OutboxMessages` table in the same transaction and delivered by a background dispatcher.
+Create, update, publish and hide raise `RecipeCreatedDomainEvent`,
+`RecipeUpdatedDomainEvent`, `RecipePublishedDomainEvent` and `RecipeHiddenDomainEvent`.
+`DELETE` hides the recipe and releases its name; it does not delete stored content.
+Events are stored in `Happymeal.OutboxMessages` in the same transaction and delivered
+by a background dispatcher.
 
 ## Tests
 
