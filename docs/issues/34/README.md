@@ -303,3 +303,33 @@ downgrade preserving baseline fields, reapplication and model/snapshot agreement
 `InitialCreate` is unchanged and only one feature migration remains. The new
 migration contains no derived name key, intermediate array columns or generated
 Unicode backfill. `git diff --check` passed. No commit or push was performed.
+
+## Review amendment — Stable error codes for client localization
+
+On 2026-11-27, the user approved preparing backend errors for Spanish/English
+localization before completing the backend PR. Add stable outcome codes and
+per-field validation codes with interpolation parameters; expose them through
+ProblemDetails while preserving existing messages, field paths, HTTP statuses and
+success responses. Document the codes for the future frontend translations.
+Do not implement frontend localization or add translation packages in this change.
+
+Common owns generic outcome/rule codes and validation metadata. Domain owns recipe
+outcome codes and supplies a code for every recipe rule. Application prechecks and
+database constraint handling use the same codes for equivalent outcomes. API owns
+ProblemDetails mapping, automatic model-binding codes and unexpected-error fallback.
+Domain remains independent of HTTP and translation resources. No schema change or
+additional migration is required.
+
+The [error-code catalog](../../../Happymeal-BE/docs/api-error-codes.md) defines
+top-level `code` and `validationErrors` field arrays containing `code` and
+`parameters`. Existing `detail`, `title` and `errors` remain diagnostic text.
+Validation aggregation retains metadata when grouping or remapping nested unit
+errors. Frontend clients should translate codes and retain a localized fallback
+for unknown future codes, without comparing English messages.
+
+Implemented and verified locally: enforced-style solution build passed (existing
+IDE0005 documentation-generation warnings only), 82 unit tests and 56 PostgreSQL
+integration tests passed. New tests cover validation codes/limits and camelCase
+indexed paths, unit-code propagation, publication parameters, not-found and
+precheck/database conflict codes, malformed JSON binding, unexpected 500 responses
+without internal details, legacy message compatibility and trace IDs.

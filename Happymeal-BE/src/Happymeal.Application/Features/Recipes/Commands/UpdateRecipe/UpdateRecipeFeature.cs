@@ -28,12 +28,12 @@ public static class UpdateRecipeFeature
             var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
             if (recipe is null)
             {
-                return Error.NotFound($"Recipe {command.Id} was not found.");
+                return Error.NotFound($"Recipe {command.Id} was not found.", RecipeErrorCodes.NotFound);
             }
 
             if (await unitOfWork.RecipeRepository.NameExistsAsync(command.Name?.Trim() ?? string.Empty, command.Id, cancellationToken))
             {
-                return Error.Conflict("Recipe name already exists.");
+                return Error.Conflict("Recipe name already exists.", RecipeErrorCodes.NameAlreadyExists);
             }
 
             var parameters = RecipeMapper.MapToParams(command);
@@ -50,7 +50,7 @@ public static class UpdateRecipeFeature
             }
             if (!saved.Value)
             {
-                return Error.Failure("Recipe could not be persisted.");
+                return Error.Failure("Recipe could not be persisted.", RecipeErrorCodes.SaveFailed);
             }
             return Result.Success(RecipeDto.From(recipe));
         }

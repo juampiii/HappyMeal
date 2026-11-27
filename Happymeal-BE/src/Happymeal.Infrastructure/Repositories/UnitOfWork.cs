@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Domain.Base;
+using Happymeal.Domain;
 using Happymeal.Infrastructure.Database;
 using Happymeal.Infrastructure.Outbox;
 
@@ -31,7 +32,7 @@ internal sealed class UnitOfWork(
         catch (DbUpdateConcurrencyException)
         {
             dbContext.ChangeTracker.Clear();
-            return Error.Conflict("Recipe changed concurrently. Reload it and try again.");
+            return Error.Conflict("Recipe changed concurrently. Reload it and try again.", RecipeErrorCodes.ConcurrentChange);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
@@ -42,9 +43,9 @@ internal sealed class UnitOfWork(
         } violation)
         {
             dbContext.ChangeTracker.Clear();
-            return Error.Conflict(violation.ConstraintName == "IX_Recipes_Name"
-                ? "Recipe name already exists."
-                : "Recipe id already exists.");
+            return violation.ConstraintName == "IX_Recipes_Name"
+                ? Error.Conflict("Recipe name already exists.", RecipeErrorCodes.NameAlreadyExists)
+                : Error.Conflict("Recipe id already exists.", RecipeErrorCodes.IdAlreadyExists);
         }
     }
 

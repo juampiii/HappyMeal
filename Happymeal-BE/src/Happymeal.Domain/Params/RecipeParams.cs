@@ -28,11 +28,12 @@ public sealed record RecipeParams(
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            yield return new ValidationFailure(nameof(Name), "Name is required.");
+            yield return new ValidationFailure(nameof(Name), "Name is required.", ValidationErrorCodes.Required);
         }
         else if (Name.Length > Recipe.NameMaxLength)
         {
-            yield return new ValidationFailure(nameof(Name), $"Name must be {Recipe.NameMaxLength} characters or fewer.");
+            yield return new ValidationFailure(nameof(Name), $"Name must be {Recipe.NameMaxLength} characters or fewer.",
+                ValidationErrorCodes.MaxLength, new Dictionary<string, object> { ["max"] = Recipe.NameMaxLength });
         }
     }
 
@@ -40,12 +41,12 @@ public sealed record RecipeParams(
     {
         if (Servings is <= 0)
         {
-            yield return new ValidationFailure(nameof(Servings), "Servings must be positive.");
+            yield return new ValidationFailure(nameof(Servings), "Servings must be positive.", ValidationErrorCodes.Positive);
         }
 
         if (PreparationMinutes is <= 0)
         {
-            yield return new ValidationFailure(nameof(PreparationMinutes), "Preparation time must be positive.");
+            yield return new ValidationFailure(nameof(PreparationMinutes), "Preparation time must be positive.", ValidationErrorCodes.Positive);
         }
     }
 
@@ -55,7 +56,8 @@ public sealed record RecipeParams(
         if (ingredients.Count > Recipe.IngredientsMaxCount)
         {
             yield return new ValidationFailure(nameof(Ingredients),
-                $"A recipe can have at most {Recipe.IngredientsMaxCount} ingredients.");
+                $"A recipe can have at most {Recipe.IngredientsMaxCount} ingredients.",
+                ValidationErrorCodes.MaxItems, new Dictionary<string, object> { ["max"] = Recipe.IngredientsMaxCount });
         }
         var names = new HashSet<string>(StringComparer.Create(
             CultureInfo.InvariantCulture,
@@ -68,28 +70,29 @@ public sealed record RecipeParams(
 
             if (ingredient is null)
             {
-                yield return new ValidationFailure(path, "Ingredient is required.");
+                yield return new ValidationFailure(path, "Ingredient is required.", ValidationErrorCodes.Required);
                 continue;
             }
 
             if (string.IsNullOrWhiteSpace(ingredient.Name))
             {
-                yield return new ValidationFailure($"{path}.Name", "Name is required.");
+                yield return new ValidationFailure($"{path}.Name", "Name is required.", ValidationErrorCodes.Required);
             }
             else if (!names.Add(ingredient.Name.Trim()))
             {
-                yield return new ValidationFailure($"{path}.Name", "Ingredient is repeated.");
+                yield return new ValidationFailure($"{path}.Name", "Ingredient is repeated.", ValidationErrorCodes.Duplicate);
             }
 
             if (ingredient.Name?.Trim().Length > RecipeIngredient.NameMaxLength)
             {
                 yield return new ValidationFailure($"{path}.Name",
-                    $"Ingredient name must be {RecipeIngredient.NameMaxLength} characters or fewer.");
+                    $"Ingredient name must be {RecipeIngredient.NameMaxLength} characters or fewer.",
+                    ValidationErrorCodes.MaxLength, new Dictionary<string, object> { ["max"] = RecipeIngredient.NameMaxLength });
             }
 
             if (ingredient.Quantity is <= 0)
             {
-                yield return new ValidationFailure($"{path}.Quantity", "Quantity must be positive.");
+                yield return new ValidationFailure($"{path}.Quantity", "Quantity must be positive.", ValidationErrorCodes.Positive);
             }
 
             if (ingredient.Unit is not null)
@@ -97,9 +100,9 @@ public sealed record RecipeParams(
                 var unitResult = UnitOfMeasure.Create(ingredient.Unit);
                 if (unitResult.IsFailure)
                 {
-                    foreach (var message in unitResult.Error!.ValidationErrors.Values.SelectMany(messages => messages))
+                    foreach (var failure in unitResult.Error!.ValidationFailures)
                     {
-                        yield return new ValidationFailure($"{path}.Unit", message);
+                        yield return failure with { PropertyName = $"{path}.Unit" };
                     }
                 }
             }
@@ -112,19 +115,21 @@ public sealed record RecipeParams(
         if (steps.Count > Recipe.StepsMaxCount)
         {
             yield return new ValidationFailure(nameof(Steps),
-                $"A recipe can have at most {Recipe.StepsMaxCount} steps.");
+                $"A recipe can have at most {Recipe.StepsMaxCount} steps.",
+                ValidationErrorCodes.MaxItems, new Dictionary<string, object> { ["max"] = Recipe.StepsMaxCount });
         }
 
         for (var i = 0; i < steps.Count; i++)
         {
             if (string.IsNullOrWhiteSpace(steps[i]))
             {
-                yield return new ValidationFailure($"Steps[{i}]", "Step must have content.");
+                yield return new ValidationFailure($"Steps[{i}]", "Step must have content.", ValidationErrorCodes.Required);
             }
             else if (steps[i].Trim().Length > RecipeStep.ContentMaxLength)
             {
                 yield return new ValidationFailure($"Steps[{i}]",
-                    $"Step content must be {RecipeStep.ContentMaxLength} characters or fewer.");
+                    $"Step content must be {RecipeStep.ContentMaxLength} characters or fewer.",
+                    ValidationErrorCodes.MaxLength, new Dictionary<string, object> { ["max"] = RecipeStep.ContentMaxLength });
             }
         }
     }
@@ -135,7 +140,8 @@ public sealed record RecipeParams(
         if (tags.Count > Recipe.TagsMaxInputCount)
         {
             yield return new ValidationFailure(nameof(Tags),
-                $"A recipe request can contain at most {Recipe.TagsMaxInputCount} tag entries.");
+                $"A recipe request can contain at most {Recipe.TagsMaxInputCount} tag entries.",
+                ValidationErrorCodes.MaxItems, new Dictionary<string, object> { ["max"] = Recipe.TagsMaxInputCount });
             yield break;
         }
 
@@ -153,14 +159,16 @@ public sealed record RecipeParams(
             if (name.Length > RecipeTag.NameMaxLength)
             {
                 yield return new ValidationFailure($"Tags[{i}]",
-                    $"Tag name must be {RecipeTag.NameMaxLength} characters or fewer.");
+                    $"Tag name must be {RecipeTag.NameMaxLength} characters or fewer.",
+                    ValidationErrorCodes.MaxLength, new Dictionary<string, object> { ["max"] = RecipeTag.NameMaxLength });
             }
         }
 
         if (names.Count > Recipe.TagsMaxCount)
         {
             yield return new ValidationFailure(nameof(Tags),
-                $"A recipe can have at most {Recipe.TagsMaxCount} distinct tags.");
+                $"A recipe can have at most {Recipe.TagsMaxCount} distinct tags.",
+                ValidationErrorCodes.MaxItems, new Dictionary<string, object> { ["max"] = Recipe.TagsMaxCount });
         }
     }
 
@@ -169,7 +177,8 @@ public sealed record RecipeParams(
         if (Description?.Length > Recipe.DescriptionMaxLength)
         {
             yield return new ValidationFailure(nameof(Description),
-                $"Description must be {Recipe.DescriptionMaxLength} characters or fewer.");
+                $"Description must be {Recipe.DescriptionMaxLength} characters or fewer.",
+                ValidationErrorCodes.MaxLength, new Dictionary<string, object> { ["max"] = Recipe.DescriptionMaxLength });
         }
     }
 }

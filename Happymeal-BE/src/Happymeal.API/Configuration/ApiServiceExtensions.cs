@@ -1,5 +1,8 @@
 using Happymeal.API.Services;
+using Happymeal.API.Mappers;
 using Happymeal.Application.Common.Interfaces;
+using Happymeal.Common.Results;
+using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 
 namespace Happymeal.API.Configuration;
@@ -10,8 +13,24 @@ public static class ApiServiceExtensions
     {
         public IServiceCollection AddApiServices()
         {
-            services.AddControllers();
-            services.AddProblemDetails();
+            services.AddControllers().ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(
+                    ProblemDetailsMapper.MapToInvalidRequestProblemDetails(context));
+            });
+            services.AddProblemDetails(options =>
+            {
+                options.CustomizeProblemDetails = context =>
+                {
+                    var code = context.ProblemDetails.Status switch
+                    {
+                        StatusCodes.Status404NotFound => ErrorCodes.NotFound,
+                        >= StatusCodes.Status500InternalServerError => ErrorCodes.Unexpected,
+                        _ => ErrorCodes.InvalidRequest
+                    };
+                    context.ProblemDetails.Extensions.TryAdd("code", code);
+                };
+            });
             services.AddOpenApi();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, HttpCurrentUser>();

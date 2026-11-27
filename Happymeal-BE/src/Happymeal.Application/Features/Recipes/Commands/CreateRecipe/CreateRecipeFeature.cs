@@ -37,12 +37,12 @@ public static class CreateRecipeFeature
 
             if (await unitOfWork.RecipeRepository.ExistsAsync(id, cancellationToken))
             {
-                return Error.Conflict($"Recipe {id} already exists.");
+                return Error.Conflict($"Recipe {id} already exists.", RecipeErrorCodes.IdAlreadyExists);
             }
 
             if (await unitOfWork.RecipeRepository.NameExistsAsync(createResult.Value.Name, id, cancellationToken))
             {
-                return Error.Conflict("Recipe name already exists.");
+                return Error.Conflict("Recipe name already exists.", RecipeErrorCodes.NameAlreadyExists);
             }
 
             var recipe = createResult.Value;
@@ -55,7 +55,7 @@ public static class CreateRecipeFeature
             }
             var wasSaved = saved.Value;
             return !wasSaved
-                ? Error.Failure("Recipe could not be persisted.")
+                ? Error.Failure("Recipe could not be persisted.", RecipeErrorCodes.SaveFailed)
                 : Result.Success(RecipeDto.From(recipe));
         }
     }

@@ -60,7 +60,7 @@ public sealed class Recipe : AggregateRoot, IAuditable
     {
         if (IsPublished || IsHidden)
         {
-            return Error.Conflict("Recipe content cannot be edited in its current state.");
+            return Error.Conflict("Recipe content cannot be edited in its current state.", RecipeErrorCodes.NotEditable);
         }
         var normalized = Normalize(parameters);
         if (normalized.Validate().ToValidationError() is { } error)
@@ -78,7 +78,7 @@ public sealed class Recipe : AggregateRoot, IAuditable
     {
         if (IsHidden)
         {
-            return Error.Conflict("Hidden recipes cannot be published.");
+            return Error.Conflict("Hidden recipes cannot be published.", RecipeErrorCodes.Hidden);
         }
         if (IsPublished)
         {
@@ -87,11 +87,13 @@ public sealed class Recipe : AggregateRoot, IAuditable
         var failures = new List<ValidationFailure>();
         if (_ingredients.Count == 0)
         {
-            failures.Add(new(nameof(Ingredients), "At least one ingredient is required."));
+            failures.Add(new(nameof(Ingredients), "At least one ingredient is required.",
+                ValidationErrorCodes.MinItems, new Dictionary<string, object> { ["min"] = 1 }));
         }
         if (Steps.Count == 0)
         {
-            failures.Add(new(nameof(Steps), "At least one step is required."));
+            failures.Add(new(nameof(Steps), "At least one step is required.",
+                ValidationErrorCodes.MinItems, new Dictionary<string, object> { ["min"] = 1 }));
         }
         if (failures.ToValidationError() is { } error)
         {
@@ -140,7 +142,7 @@ public sealed class Recipe : AggregateRoot, IAuditable
     {
         if (id == Guid.Empty)
         {
-            yield return new ValidationFailure(nameof(Id), "Id must not be empty.");
+            yield return new ValidationFailure(nameof(Id), "Id must not be empty.", ValidationErrorCodes.EmptyId);
         }
     }
 

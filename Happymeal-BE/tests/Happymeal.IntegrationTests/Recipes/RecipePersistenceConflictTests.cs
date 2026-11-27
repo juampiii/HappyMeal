@@ -36,6 +36,7 @@ public class RecipePersistenceConflictTests(HappymealApiFactory factory) : TestB
         // Assert
         result.Error!.Type.Should().Be(ErrorType.Conflict);
         result.Error.Message.Should().Be(expectedMessage);
+        result.Error.Code.Should().Be(duplicateId ? "recipe.idAlreadyExists" : "recipe.nameAlreadyExists");
         dbContext.ChangeTracker.Entries().Should().BeEmpty();
         var recipeCount = await QueryAsync(db => db.Recipes.CountAsync(cancellationToken));
         var eventCount = await QueryAsync(db => db.OutboxMessages.CountAsync(cancellationToken));

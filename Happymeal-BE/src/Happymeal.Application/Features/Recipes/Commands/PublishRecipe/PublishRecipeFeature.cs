@@ -1,3 +1,4 @@
+using Happymeal.Domain;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
 using Happymeal.Common.Results;
@@ -13,7 +14,7 @@ public static class PublishRecipeFeature
             var recipe = await unitOfWork.RecipeRepository.GetAsync(command.Id, cancellationToken);
             if (recipe is null)
             {
-                return Error.NotFound($"Recipe {command.Id} was not found.");
+                return Error.NotFound($"Recipe {command.Id} was not found.", RecipeErrorCodes.NotFound);
             }
             if (recipe.IsPublished && !recipe.IsHidden)
             {
@@ -29,7 +30,7 @@ public static class PublishRecipeFeature
             {
                 return saved.Error!;
             }
-            return saved.Value ? Result.Success() : Error.Failure("Recipe could not be persisted.");
+            return saved.Value ? Result.Success() : Error.Failure("Recipe could not be persisted.", RecipeErrorCodes.SaveFailed);
         }
     }
 }

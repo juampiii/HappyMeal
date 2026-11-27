@@ -1,4 +1,5 @@
 using Happymeal.Common.Results;
+using Happymeal.Common.Validation;
 
 namespace Happymeal.Domain;
 
@@ -30,10 +31,8 @@ public sealed record UnitOfMeasure
             return Result.Success(unit);
         }
 
-        return Error.Validation(new Dictionary<string, string[]>
-        {
-            [nameof(Code)] = ["Unit is not supported."]
-        });
+        return Error.Validation([new ValidationFailure(
+            nameof(Code), "Unit is not supported.", ValidationErrorCodes.UnsupportedValue)]);
     }
 
     public override string ToString() => Code;
