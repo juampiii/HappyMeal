@@ -31,6 +31,23 @@ jobs:
       - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           global-json-file: Happymeal-BE/global.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: Happymeal-FE/.nvmrc
+          cache: npm
+          cache-dependency-path: Happymeal-FE/package-lock.json
+      - name: Frontend dependencies, tests and production build
+        working-directory: Happymeal-FE
+        run: |
+          npm ci
+          npm run format:check
+          npm test -- --watch=false
+          npm run build
+      - name: Frontend browser regression tests (desktop and mobile)
+        working-directory: Happymeal-FE
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
       - name: Build
         working-directory: Happymeal-BE
         run: dotnet build Happymeal.slnx -c Release -p:EnforceCodeStyleInBuild=true
