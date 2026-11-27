@@ -357,3 +357,193 @@ only), 82 unit tests and 62 PostgreSQL integration tests passed. New contract te
 exercise `{}` and explicit null names for both create and update, preserve stored
 names after rejected updates, and verify distinct HTTP 405/415 codes. No schema
 or migration changes were required; serialized persistence codes are unchanged.
+
+
+## 34 — Recipe-book frontend localization
+
+**Work item:** Manage recipes (#34)
+**Agreement date:** 2026-11-27
+**Plan status:** Agreed
+**Implementation status:** Completed and verified locally
+
+### Objective and scope
+
+The recipe-book interface currently embeds Spanish text in its components and
+feedback. Make all application-owned text available in Spanish and English with
+Spanish as the default. Switch language without reloading or losing recipe input.
+
+Include a persistent language selector, translated unit labels, accessible names,
+placeholders, lifecycle feedback, empty/loading states, document language/title
+and locale-aware display formatting. Consume the backend's stable error codes and
+validation parameters; never translate by matching server prose. User-authored
+recipe names, descriptions, ingredients, steps and tags remain unchanged.
+Authentication and PWA installation stay outside story #34.
+
+### Agreed decisions
+
+- Keep one deployed Angular application and switch language at runtime.
+- Use small typed ES/EN catalogs and an Angular signal service; no new dependency
+  is needed for this interface. Each catalog must contain the same keys.
+- Store a validated preference in localStorage, defaulting to Spanish. Blocked
+  storage must not prevent reading recipes or switching language in the session.
+- Keep language-neutral API payloads, numeric form values and stable unit codes.
+- Store feedback identifiers or original errors so visible feedback can translate
+  again when language changes. Unknown server codes use localized fallbacks.
+- Backend contract reference: `feature/34-manage-recipes-be`, commit `2a4fdb6`.
+  Keep this frontend branch independent; do not merge backend implementation here.
+
+### Plan
+
+| Step | Work | Observable result |
+| --- | --- | --- |
+| F1 — Add runtime localization and language choice | Typed catalogs, language/formatting service, selector and document metadata. | Spanish loads by default; English and saved preferences work without a reload. |
+| F2 — Translate recipe flows and coded errors | Replace UI literals, preserve user content, translate units/numbers and backend codes/parameters. | List, edit, detail and lifecycle feedback use the selected language without changing payloads or losing edits. |
+| F3 — Verify bilingual recipe workflows | Component/service tests, production build and browser-level workflow checks where available. | Both languages render, switching preserves state, errors translate, and existing lifecycle restrictions still hold. |
+
+F1 precedes F2; F3 verifies their combined result. Existing lifecycle tests remain
+part of verification. This plan records the localization amendment, not closure
+of the entire shared recipe-book release.
+
+### Delivery and verification
+
+Implemented on 2026-11-27. F1 and F2 provide runtime ES/EN catalogs, persistent
+language choice, document metadata, locale-aware numbers/dates, translated units
+and all recipe-book application text. Components keep original errors and feedback
+keys so already-visible feedback changes language. Form values, dirty state and
+user-authored content survive switching. API transport unit codes are unchanged.
+Length limits for ingredient/step inputs match the backend; it remains authoritative.
+
+F3 adds Playwright as a development-only dependency. Eight controlled-response
+browser cases run on desktop/mobile Chromium and are configured in the existing
+CI workflow. Four opt-in live-backend cases exercise the full draft/edit/publish/hide
+flow in both languages and viewport sizes. Default runs skip live cases unless
+`HAPPYMEAL_LIVE_API=1`; they never reset an existing database.
+
+Verification completed locally:
+
+- `npm test -- --watch=false`: 23 tests passed across five files.
+- `npm run build`: passed; initial production assets approximately 341 kB raw,
+  below the configured 500 kB warning budget.
+- `HAPPYMEAL_LIVE_API=1 npm run test:e2e`: all 12 Chromium cases passed, including
+  all four real-backend cases against commit `2a4fdb6` and a disposable PostgreSQL
+  18 container. No existing application database was changed.
+- Visual inspection of the English mobile detail screenshot: labels, selector,
+  translated units and user content render correctly; the browser checks no
+  horizontal overflow at 390 pixels. Desktop rendering is covered by the same tests.
+- Catalog key/placeholder parity, blocked/invalid storage, live error translation,
+  indexed validation parameters, legacy/unknown error fallback, number/date
+  formatting and unchanged outgoing unit codes are covered by tests.
+- CI execution itself has not been run remotely for these unpushed changes.
+
+The original F1–F3 plan above is preserved. The integration base was updated after
+backend PR #26 merged (`270e1a2`), bringing the already-approved backend through
+the base branch rather than adding new backend implementation to this delivery.
+Its story document is retained above; this section closes only the frontend
+localization amendment. Authentication and PWA installation remain outside scope.
+No frontend feature commit or push was requested in this implementation turn.
+
+Main references: [catalogs](../../../Happymeal-FE/src/app/i18n/messages.ts),
+[localization service](../../../Happymeal-FE/src/app/i18n/i18n.ts),
+[coded API errors](../../../Happymeal-FE/src/app/api-errors.ts),
+[browser tests](../../../Happymeal-FE/e2e/localization.spec.ts) and
+[frontend instructions](../../../Happymeal-FE/README.md).
+
+## Frontend review follow-up — Feedback and field validation
+
+The review's legacy `errorMessage`/prefix mapping and four-test observations refer
+to the earlier frontend: current localization already consumes backend codes,
+parameters and indexed fields, including publication `MinItems` and distinct
+conflict messages. The review did identify real feedback/validation gaps.
+
+Apply these scoped corrections while preserving the F1–F3 localization plan:
+
+- Transfer the creation response and saved notice through transient router info,
+  captured during component construction and consumed once on the destination.
+  Do not fetch the just-created recipe again; reload/back reads fresh data.
+- Update `isPublished` after a successful publish POST without blanking/refetching
+  the detail. Failed/pending publication keeps the original content and draft state.
+- Add localized field feedback with `aria-describedby`, including server codes.
+  Reject whitespace-only ingredient names/steps; check text, collection and tag
+  limits in the client as early feedback. Domain remains authoritative.
+- Clear stale feedback and hide confirmations on action/field changes. Retry is
+  offered specifically for a failed detail load, alongside the existing back link.
+- Use singular unit labels for quantities of one. Keep the static API unit-code
+  contract and verify all offered codes against the real backend; an endpoint
+  for discovering future unit additions is not introduced in this frontend PR.
+- Add portable Prettier checking to CI. Browser tests use their own server on
+  port 4300 so a live preview/HMR session on 4200 cannot affect test initialization.
+
+The absence of a client version in PUT does not remove the backend's existing
+`xmin` protection between its aggregate read and save. This follow-up changes no
+backend concurrency contract or promises about detecting an old browser form.
+
+Implemented and verified locally on 2026-11-27:
+
+- All 34 frontend tests passed across six files, including pending/failed/successful
+  publication, editing/saving without navigation, field feedback, stale feedback
+  clearing, load retry, text/tag/count boundaries and singular unit labels.
+- All 22 Playwright cases passed on desktop/mobile Chromium: 16 controlled-response
+  cases and six live-backend cases against disposable PostgreSQL. The creation
+  test uses the actual router and verifies the saved notice, no duplicate GET,
+  language switching and a fresh GET without an old notice on reload.
+- Production build passed (approximately 349 kB initial raw assets, within budget).
+- `npm run format:check` and `git diff --check` passed. The CI workflow is configured
+  to enforce formatting; no remote CI run is claimed for these unpushed edits.
+- English mobile field-error rendering was visually checked, and browser cases
+  verify no horizontal overflow at 390 pixels. Preview remains on port 4200;
+  isolated tests use 4300. No production database or backend code was changed.
+
+Changes remain uncommitted for frontend review. Use the current frontend worktree
+rather than the older remote frontend commit when reviewing these corrections.
+
+## Frontend independent review — Async loads and accessible feedback
+
+On 2026-11-27, apply the remaining review corrections without changing the backend
+or the agreed ES/EN scope:
+
+- Detail loads check both a monotonically increasing request generation and the
+  current route ID. Old successes, failures and finally blocks cannot overwrite
+  the current recipe, feedback or pending-loading state. Destroyed views invalidate
+  outstanding requests as well.
+- Form value events identify the changed control path and remove only its
+  structured server errors. Collection structural changes invalidate that
+  collection's indexed errors; unrelated fields retain their feedback.
+- Editing validation uses one brief alert summary plus field descriptions,
+  rather than announcing every field message twice. Detail-only publication
+  errors keep their descriptive minimum-items feedback because no fields are shown.
+- A permanent 404 offers the existing back link. Retry applies to network errors,
+  HTTP 408/429 and server failures. A failed hide keeps its confirmation open and
+  shows the error inside it, allowing retry/cancel without reopening.
+- Native labels use `for`/`id`; field errors live outside labels. All input/select/
+  textarea controls expose `aria-invalid` for local/server failures and descriptions
+  through `aria-describedby`. Icon/action labels retain their contextual names.
+- `FieldError` uses signal inputs, computed feedback and Angular RxJS interop to
+  follow control events with automatic cleanup. Positive numbers have an explicit
+  semantic validator; a generic minimum is formatted as a minimum, not guessed
+  from its actual value. Ingredient amount formatting joins nonempty parts only.
+- Playwright defaults to its own port 4300, overridable with `HAPPYMEAL_E2E_PORT`.
+  Do not reuse an unrelated server or HMR preview. Keep project instructions short;
+  implementation details and current API-contract links belong in README.
+
+Two review observations do not require a behavior change: backend tag comparison
+is `OrdinalIgnoreCase`, so accents remain distinct just as in the frontend's
+Spanish/English tag handling; the earlier claim that tags ignore accents confused
+them with ingredient-name comparison. Playwright is the explicitly agreed test
+tool, and the dependency restriction concerns UI/state libraries. No new runtime
+dependency or backend endpoint is introduced here.
+
+Verification: 45 unit tests and 28 Playwright cases pass, including the live
+backend lifecycle in Spanish and English on desktop and mobile. The browser suite
+also passes with `HAPPYMEAL_E2E_PORT=4317`. Production build, Prettier checks and
+`git diff --check` pass. The mobile field-error screenshot was reviewed for layout
+and readable feedback.
+
+## Frontend pull request delivery
+
+On 2026-11-27, the user approved committing, pushing and opening the frontend PR.
+The final delivery includes ES/EN localization, structured API error translation,
+field validation, lifecycle feedback and the independent-review corrections above.
+The PR targets `feature/34-manage-recipes`, which already contains the approved
+backend PR #26; its review diff therefore contains frontend work and shared CI/docs.
+Remote CI results remain to be checked after publication. Authentication (#35),
+PWA installation (#36) and recipe version creation remain outside this scope.

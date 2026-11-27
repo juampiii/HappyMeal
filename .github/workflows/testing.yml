@@ -40,8 +40,14 @@ jobs:
         working-directory: Happymeal-FE
         run: |
           npm ci
+          npm run format:check
           npm test -- --watch=false
           npm run build
+      - name: Frontend browser regression tests (desktop and mobile)
+        working-directory: Happymeal-FE
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
       - name: Build
         working-directory: Happymeal-BE
         run: dotnet build Happymeal.slnx -c Release -p:EnforceCodeStyleInBuild=true
