@@ -21,7 +21,7 @@ public sealed record Command(
     string? Description = null);
 ```
 
-## Request-to-command mapping
+## Mapping across layers
 
 - Put request DTO to Application command mappings in a static `<Entity>Mapper`
   class under `Happymeal.API/Mappers`, such as `RecipeMapper`.
@@ -35,6 +35,16 @@ public sealed record Command(
   Do not make Application or Domain depend on API DTOs.
 - Simple commands or queries built only from an identifier do not need a request
   mapper when there is no request DTO to map.
+
+- Map Application commands to domain params through a feature-local static
+  `<Entity>Mapper` under `Happymeal.Application/Features/<Feature>/Mappers`.
+  Use `MapToParams` overloads for each command type, with named constructor
+  arguments on separate lines. Handlers keep the resulting `parameters` in a
+  local variable before calling the domain factory or mutator.
+- Keep each mapper in the layer that knows both its input and output. API request
+  mapping stays in API; command-to-domain-params mapping stays in Application.
+  Use distinct namespaces so the entity mapper name can be reused in both layers
+  without introducing API dependencies into Application.
 
 ## Validation
 

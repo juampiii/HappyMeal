@@ -1,5 +1,6 @@
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
+using Happymeal.Application.Features.Recipes.Mappers;
 using Happymeal.Common.Results;
 using Happymeal.Domain;
 using Happymeal.Domain.Params;
@@ -27,7 +28,8 @@ public static class CreateRecipeFeature
         {
             var id = command.Id ?? Guid.CreateVersion7();
 
-            var createResult = Recipe.Create(id, new RecipeParams(command.Name, command.Description, command.Ingredients, command.Steps, command.Servings, command.PreparationMinutes, command.Tags));
+            var parameters = RecipeMapper.MapToParams(command);
+            var createResult = Recipe.Create(id, parameters);
             if (createResult.IsFailure)
             {
                 return createResult.Error!;

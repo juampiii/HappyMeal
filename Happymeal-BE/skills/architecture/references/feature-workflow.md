@@ -40,7 +40,7 @@ Never put EF Core, HTTP or configuration concerns in Domain.
 
 1. Nest a `public sealed class Handler(...)` alongside `Command` or `Query` inside `<Name>Feature`. Implement `ICommandHandler<Command>`, `ICommandHandler<Command, TResponse>` or `IQueryHandler<Query, TResponse>` as appropriate. The assembly scanner includes nested handlers. Call sites use `<Name>Feature.Command` or `<Name>Feature.Query`, avoiding namespace aliases.
 2. Use guard clauses: not found -> `return Error.NotFound(...)`, conflict -> `return Error.Conflict(...)`.
-3. Call the Domain method. On failure pass the error through: `return result.Error!;`.
+3. Map the command to Domain params through a feature-local Application `<Entity>Mapper.MapToParams(command)`, storing a `parameters` variable. Keep field-by-field construction in the mapper; call the Domain factory or mutator with those params. On failure pass the error through: `return result.Error!;`.
 4. Persist through `IUnitOfWork` repositories and call `SaveEntitiesAsync` once (commands only).
 5. Return `Result.Success(dto)` or `Result.Success()`.
 6. To react to a domain event, add an `IDomainEventHandler<TDomainEvent>` in `Features/<Feature>/DomainEventHandlers/`. It must be idempotent.

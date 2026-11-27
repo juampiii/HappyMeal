@@ -1,6 +1,7 @@
 using Happymeal.Domain;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Application.Common.Messaging;
+using Happymeal.Application.Features.Recipes.Mappers;
 using Happymeal.Common.Results;
 using Happymeal.Domain.Params;
 
@@ -35,7 +36,8 @@ public static class UpdateRecipeFeature
                 return Error.Conflict("Recipe name already exists.");
             }
 
-            var updateResult = recipe.Update(new RecipeParams(command.Name, command.Description, command.Ingredients, command.Steps, command.Servings, command.PreparationMinutes, command.Tags));
+            var parameters = RecipeMapper.MapToParams(command);
+            var updateResult = recipe.Update(parameters);
             if (updateResult.IsFailure)
             {
                 return updateResult.Error!;
