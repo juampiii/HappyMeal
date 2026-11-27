@@ -1,6 +1,10 @@
 # Validation Strategy
 
-Happymeal-BE uses the standard ASP.NET Core error contract. Every error is an RFC 9457 `ProblemDetails` body. Validation errors are a `400` `ValidationProblemDetails` with plain text messages.
+Happymeal-BE uses the standard ASP.NET Core error contract. Application errors are
+RFC 9457 `ProblemDetails` bodies with a stable `code`. Validation errors are a
+`400` `ValidationProblemDetails` with existing plain text messages plus structured
+per-field codes and interpolation parameters. See the
+[public error-code catalog](../../../docs/api-error-codes.md).
 
 Domain factories and mutators validate inputs and return failures as an `Error` of type `Validation`. The API maps that error to the HTTP response.
 
@@ -40,7 +44,9 @@ Example:
   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
   "title": "One or more validation errors occurred.",
   "status": 400,
+  "code": "validation.failed",
   "errors": { "name": [ "Name is required." ] },
+  "validationErrors": { "name": [{ "code": "validation.required", "parameters": {} }] },
   "traceId": "00-..."
 }
 ```
@@ -57,8 +63,27 @@ Do not duplicate a Domain rule in Application. There is no FluentValidation in t
 
 ## Messages and Paths
 
-- Messages are plain English sentences written in `Validate()`, for example `"Name is required."`. They are part of the API contract, so change them on purpose.
-- `ValidationFailure.PropertyName` is the C# path (`Name`, `Steps[0].Text`). `ControllerExtensions.ToModelState` converts each segment with the configured JSON naming policy (`name`, `steps[0].text`). Keep params and request DTO property names aligned so the paths match the request body. If they diverge, rename the property; do not add a mapping layer without a real need.
+- Keep English diagnostic messages for compatibility. Clients translate stable
+  `Error.Code` and `ValidationFailure.Code`, not those messages. Use named constants
+  from `RecipeErrorCodes`, Application's `RecipePersistenceErrorCodes`,
+  `ErrorCodes` and `ValidationErrorCodes`; codes never
+  depend on the selected language or on message parsing.
+- `ValidationFailure.Parameters` carries interpolation values such as `max` and
+  `min`. Preserve codes and parameters when remapping a validation failure to a
+  nested property path. Every new rule needs an appropriate code.
+- `ValidationFailure.PropertyName` is the C# path (`Name`, `Steps[0].Text`).
+  `ProblemDetailsMapper` converts each segment with the configured JSON naming
+  policy (`name`, `steps[0].text`) for both `errors` and `validationErrors`.
+- Model-binding failures get `request.invalid` and per-field `request.invalidValue`
+  without interpreting framework messages. Unexpected exceptions get
+  `error.unexpected` without disclosing internal details.
+- Nullable recipe request names let missing/null names reach the domain required
+  rule instead of MVC's implicit required-property check. The request mapper
+  represents an absent name as an empty command string; Domain validates it.
+- Use `request.invalid` only as the automatic HTTP 400 code. HTTP 405 and 415 have
+  distinct codes; other unmatched HTTP errors use `http.error` with their status.
+- Persistence outcome codes belong to Application, where persistence contracts
+  are defined. Infrastructure consumes them; Domain does not own storage failures.
 
 ## Testing
 

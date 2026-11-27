@@ -1,5 +1,10 @@
+using Happymeal.Application.Features.Recipes;
+using Happymeal.Common.Results;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Happymeal.Application.Common.Interfaces;
 using Happymeal.Domain.Base;
+using Happymeal.Domain;
 using Happymeal.Infrastructure.Database;
 using Happymeal.Infrastructure.Outbox;
 
@@ -19,8 +24,44 @@ internal sealed class UnitOfWork(
         return await dbContext.SaveChangesAsync(cancellationToken) > 0;
     }
 
+    public async Task<Result<bool>> TrySaveEntitiesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Result.Success(await SaveEntitiesAsync(cancellationToken));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return Error.Conflict("Recipe changed concurrently. Reload it and try again.", RecipePersistenceErrorCodes.ConcurrentChange);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            SchemaName: HappymealDbContext.Schema,
+            TableName: "Recipes",
+            ConstraintName: "IX_Recipes_Name" or "PK_Recipes"
+        } violation)
+        {
+            dbContext.ChangeTracker.Clear();
+            return violation.ConstraintName == "IX_Recipes_Name"
+                ? Error.Conflict("Recipe name already exists.", RecipeErrorCodes.NameAlreadyExists)
+                : Error.Conflict("Recipe id already exists.", RecipeErrorCodes.IdAlreadyExists);
+        }
+    }
+
     private void StageDomainEvents()
     {
+        // An edit to owned elements must also update the root so xmin protects
+        // the complete aggregate against a concurrent publication.
+        foreach (var entry in dbContext.ChangeTracker.Entries<AggregateRoot>())
+        {
+            if (entry.State == EntityState.Unchanged && entry.Entity.GetDomainEvents().Count != 0)
+            {
+                entry.State = EntityState.Modified;
+            }
+        }
+
         var domainEvents = dbContext.ChangeTracker
             .Entries<AggregateRoot>()
             .SelectMany(e => e.Entity.PullDomainEvents())

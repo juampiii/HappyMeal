@@ -15,6 +15,7 @@ Application use cases group a nested `Command` or `Query` and `Handler` in a pub
 |------|-----------------|
 | [`project-map.md`](references/project-map.md) | Solution structure, project responsibilities, dependency direction, packages. |
 | [`layers-and-flows.md`](references/layers-and-flows.md) | Layers, commands/queries/handlers and `ISender`, `Result`/`Error`, Unit of Work, outbox and domain event handlers. |
+| [`domain-modeling.md`](references/domain-modeling.md) | Aggregate boundaries, owned elements, value objects, read-only collections and clear persistence mappings. |
 | [`validation-strategy.md`](references/validation-strategy.md) | Where validation lives and the ProblemDetails / ValidationProblemDetails contract. |
 | [`runtime-and-integrations.md`](references/runtime-and-integrations.md) | API startup, database, migrations, outbox dispatcher, OpenAPI, health checks, local Docker. |
 | [`feature-workflow.md`](references/feature-workflow.md) | Step-by-step guide to add or change a feature. |
@@ -25,6 +26,7 @@ Application use cases group a nested `Command` or `Query` and `Handler` in a pub
 - Designing a new endpoint, command or query: read [`feature-workflow.md`](references/feature-workflow.md) and [`layers-and-flows.md`](references/layers-and-flows.md).
 - Raising a domain event or reacting to one: read the Unit of Work and Domain Event Handlers sections in [`layers-and-flows.md`](references/layers-and-flows.md).
 - Adding validation or changing an error response: read [`validation-strategy.md`](references/validation-strategy.md).
+- Modeling domain entities, value objects or collections: read [`domain-modeling.md`](references/domain-modeling.md).
 - Changing the database model, migrations, startup or configuration: read [`runtime-and-integrations.md`](references/runtime-and-integrations.md).
 - Planning test coverage: read [`feature-workflow.md`](references/feature-workflow.md), then use the `unit-tests` or `integration-tests` skill.
 

@@ -11,7 +11,7 @@ What lives here:
 - `Base/IAuditable`: `CreatedOn`, `CreatedBy`, `ModifiedOn`, `ModifiedBy`, with private setters on the entity. Domain never sets them; the `AuditableInterceptor` in Infrastructure does (see [`runtime-and-integrations.md`](runtime-and-integrations.md)).
 - `Base/DomainEvent`: `abstract record DomainEvent : IDomainEvent`. Every domain event derives from it.
 - `Params/*`: input records for factories and update methods. Each one implements `IValidatable` (`Happymeal.Common.Validation`) and holds its own rules in `Validate()` (`RecipeParams`).
-- `Events/*`: one file per domain event, a sealed record with primitive fields, named `<Entity><PastTenseVerb>DomainEvent` (`RecipeCreatedDomainEvent`, `RecipeUpdatedDomainEvent`, `RecipeDeletedDomainEvent`).
+- `Events/*`: one file per domain event, a sealed record with primitive fields, named `<Entity><PastTenseVerb>DomainEvent` (`RecipeCreatedDomainEvent`, `RecipeUpdatedDomainEvent`, `RecipeHiddenDomainEvent`).
 
 Domain has no third-party packages. It only references `Happymeal.Common`.
 
@@ -237,7 +237,7 @@ A handler implements `Happymeal.Common.DomainEvents.IDomainEventHandler<TDomainE
 public sealed class LogRecipeLifecycleDomainEventHandler(ILogger<LogRecipeLifecycleDomainEventHandler> logger) :
     IDomainEventHandler<RecipeCreatedDomainEvent>,
     IDomainEventHandler<RecipeUpdatedDomainEvent>,
-    IDomainEventHandler<RecipeDeletedDomainEvent>
+    IDomainEventHandler<RecipeHiddenDomainEvent>
 {
     public Task<Result> HandleAsync(RecipeCreatedDomainEvent domainEvent, Guid correlationId, CancellationToken cancellationToken = default) { ... }
 }

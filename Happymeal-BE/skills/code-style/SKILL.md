@@ -1,0 +1,102 @@
+---
+name: code-style
+description: Apply the agreed Happymeal-BE C# readability conventions when writing or reviewing production code and tests. Maintain these conventions during file-by-file review. Architecture and business rules remain in their respective skills and story documents.
+---
+
+# Happymeal-BE code style
+
+These are confirmed project conventions. Apply them to the code being changed or
+reviewed. Keep unrelated formatting out of a focused review change.
+
+## Parameters and control flow
+
+- Always use braces for every `if` and `else` body, including single statements.
+- When a parameter declaration spans multiple lines, begin the parameters on the
+  line after the opening parenthesis and put one parameter on each line.
+
+```csharp
+public sealed record Command(
+    Guid? Id,
+    string Name,
+    string? Description = null);
+```
+
+## Collections and constructors
+
+- Prefer collection expressions (`[]`, `[item]`, `[.. source]`) whenever the
+  target type permits them and behavior is preserved. In particular, use spread
+  expressions instead of ending LINQ projections with `ToArray()` or `ToList()`
+  when assigning to a known collection type or passing a collection argument.
+- Keep conversions when a collection expression has no target type or the
+  conversion provides required behavior, such as a read-only wrapper.
+- Write explicit constructors with block bodies and individual assignments.
+  Do not use expression-bodied constructors or tuple assignments to initialize
+  multiple properties. This does not require expanding positional records.
+
+```csharp
+_tags = [.. names.Select(name => new RecipeTag(name))];
+
+internal RecipeStep(
+    int position,
+    string content)
+{
+    Position = position;
+    Content = content;
+}
+```
+
+## Mapping across layers
+
+- Put request DTO to Application command mappings in a static `<Entity>Mapper`
+  class under `Happymeal.API/Mappers`, such as `RecipeMapper`.
+- Use `MapToCommand` overloads for distinct request types. Receive the request
+  first, followed by route identifiers or other information needed to build the
+  command. An update identifier comes explicitly from the route.
+- Controllers map to a named `command` variable, then call `sender.SendAsync`.
+  Keep the field-by-field construction inside the mapper.
+- Use named constructor arguments, one per line, for these mappings.
+- Mappers only translate data. Keep validation and normalization in the domain.
+  Do not make Application or Domain depend on API DTOs.
+- Simple commands or queries built only from an identifier do not need a request
+  mapper when there is no request DTO to map.
+
+- Map Application commands to domain params through a feature-local static
+  `<Entity>Mapper` under `Happymeal.Application/Features/<Feature>/Mappers`.
+  Use `MapToParams` overloads for each command type, with named constructor
+  arguments on separate lines. Handlers keep the resulting `parameters` in a
+  local variable before calling the domain factory or mutator.
+- Keep each mapper in the layer that knows both its input and output. API request
+  mapping stays in API; command-to-domain-params mapping stays in Application.
+  Use distinct namespaces so the entity mapper name can be reused in both layers
+  without introducing API dependencies into Application.
+
+## Validation
+
+- For nontrivial params validation, use small private methods named after the
+  groups of rules they validate. Compose their results with `Concat` in
+  `Validate()` so all failures are returned.
+- Resolve nullable collections once locally, for example `var steps = Steps ?? [];`.
+- When error paths need element indices, prefer a simple indexed loop over a LINQ
+  pipeline that adds tuples only to preserve those indices. Use LINQ when it makes
+  the particular validation easier to read; a loop is not inherently less idiomatic.
+
+## Tests
+
+- Give each test one main behavior and a name that explains its condition and
+  expected result. Keep validation and name-comparison tests in their own classes,
+  rather than mixing them into recipe lifecycle tests.
+- Separate nontrivial setup, execution and verification with `// Arrange`,
+  `// Act` and `// Assert`. Keep action results in named variables instead of
+  combining calls, awaits and assertions into one expression.
+- Use descriptive names such as `editingScope`, `publishingUnitOfWork`,
+  `firstResponse` and `repeatedResponse`. Lay out long requests and calls so the
+  scenario can be read without unpacking a dense line.
+- Keep test helpers focused on shared setup; leave the behavior being tested
+  visible in the test. Follow the unit/integration test skills for test mechanics.
+
+## Keeping review notes
+
+Record newly confirmed, reusable style preferences here as the review progresses.
+Keep file-specific fixes and business decisions in their appropriate code or story
+rather than generalizing them into style rules. Retain the scope of a preference
+and its rationale when they affect how it should be applied.

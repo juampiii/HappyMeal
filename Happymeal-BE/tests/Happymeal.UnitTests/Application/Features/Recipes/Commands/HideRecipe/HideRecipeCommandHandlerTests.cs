@@ -1,21 +1,22 @@
 using Happymeal.Application.Common.Interfaces;
-using Happymeal.Application.Features.Recipes.Commands.DeleteRecipe;
+using Happymeal.Application.Features.Recipes.Commands.HideRecipe;
 using Happymeal.Common.Results;
 using Happymeal.Domain;
 using Happymeal.Domain.Events;
 using Happymeal.Domain.Params;
 
-namespace Happymeal.UnitTests.Application.Features.Recipes.Commands.DeleteRecipe;
+namespace Happymeal.UnitTests.Application.Features.Recipes.Commands.HideRecipe;
 
-public class DeleteRecipeCommandHandlerTests
+public class HideRecipeCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly DeleteRecipeFeature.Handler _sut;
+    private readonly HideRecipeFeature.Handler _sut;
 
-    public DeleteRecipeCommandHandlerTests()
+    public HideRecipeCommandHandlerTests()
     {
         _unitOfWork = Substitute.For<IUnitOfWork>();
-        _sut = new DeleteRecipeFeature.Handler(_unitOfWork);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
+        _sut = new HideRecipeFeature.Handler(_unitOfWork);
     }
 
     private static Recipe CreateRecipe()
@@ -26,21 +27,21 @@ public class DeleteRecipeCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenRecipeExists_ShouldDeleteAndRaiseRecipeDeletedDomainEvent()
+    public async Task HandleAsync_WhenRecipeExists_ShouldDeleteAndRaiseRecipeHiddenDomainEvent()
     {
         // Arrange
         var recipe = CreateRecipe();
         _unitOfWork.RecipeRepository.GetAsync(recipe.Id, Arg.Any<CancellationToken>()).Returns(recipe);
-        _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(true);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(true));
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(recipe.Id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new HideRecipeFeature.Command(recipe.Id), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        recipe.GetDomainEvents().Should().ContainSingle().Which.Should().BeOfType<RecipeDeletedDomainEvent>();
-        _unitOfWork.RecipeRepository.Received(1).Delete(recipe);
-        await _unitOfWork.Received(1).SaveEntitiesAsync(Arg.Any<CancellationToken>());
+        recipe.GetDomainEvents().Should().ContainSingle().Which.Should().BeOfType<RecipeHiddenDomainEvent>();
+        recipe.IsHidden.Should().BeTrue();
+        await _unitOfWork.Received(1).TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -51,13 +52,13 @@ public class DeleteRecipeCommandHandlerTests
         _unitOfWork.RecipeRepository.GetAsync(id, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new HideRecipeFeature.Command(id), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
         result.Error!.Type.Should().Be(ErrorType.NotFound);
-        _unitOfWork.RecipeRepository.DidNotReceive().Delete(Arg.Any<Recipe>());
-        await _unitOfWork.DidNotReceive().SaveEntitiesAsync(Arg.Any<CancellationToken>());
+
+        await _unitOfWork.DidNotReceive().TrySaveEntitiesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -66,10 +67,10 @@ public class DeleteRecipeCommandHandlerTests
         // Arrange
         var recipe = CreateRecipe();
         _unitOfWork.RecipeRepository.GetAsync(recipe.Id, Arg.Any<CancellationToken>()).Returns(recipe);
-        _unitOfWork.SaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(false);
+        _unitOfWork.TrySaveEntitiesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(false));
 
         // Act
-        var result = await _sut.HandleAsync(new DeleteRecipeFeature.Command(recipe.Id), CancellationToken.None);
+        var result = await _sut.HandleAsync(new HideRecipeFeature.Command(recipe.Id), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();

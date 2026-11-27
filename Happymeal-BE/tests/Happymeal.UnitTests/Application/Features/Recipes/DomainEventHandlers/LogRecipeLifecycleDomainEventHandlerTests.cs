@@ -28,10 +28,10 @@ public class LogRecipeLifecycleDomainEventHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenRecipeDeleted_ShouldReturnSuccess()
+    public async Task HandleAsync_WhenRecipeHidden_ShouldReturnSuccess()
     {
         var result = await _sut.HandleAsync(
-            new RecipeDeletedDomainEvent(Guid.CreateVersion7()), Guid.NewGuid(), CancellationToken.None);
+            new RecipeHiddenDomainEvent(Guid.CreateVersion7()), Guid.NewGuid(), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
     }

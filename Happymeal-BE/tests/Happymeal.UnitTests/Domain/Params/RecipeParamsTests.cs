@@ -47,4 +47,96 @@ public class RecipeParamsTests
         => new RecipeParams("", new string('a', Recipe.DescriptionMaxLength + 1)).Validate()
             .Select(f => f.PropertyName)
             .Should().BeEquivalentTo([nameof(RecipeParams.Name), nameof(RecipeParams.Description)]);
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_WhenIngredientQuantityIsNotPositive_ShouldReturnQuantityFailure(int quantity)
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Ingredients = [new("Salt", quantity, "g")]
+        };
+
+        // Act
+        var failures = parameters.Validate().ToList();
+
+        // Assert
+        failures.Should().ContainSingle()
+            .Which.PropertyName.Should().Be("Ingredients[0].Quantity");
+    }
+
+    [Fact]
+    public void Validate_WhenIngredientUnitIsUnknown_ShouldReturnUnitFailure()
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Ingredients = [new("Salt", 1m, "unknown")]
+        };
+
+        // Act
+        var failures = parameters.Validate().ToList();
+
+        // Assert
+        failures.Should().ContainSingle()
+            .Which.PropertyName.Should().Be("Ingredients[0].Unit");
+    }
+
+    [Theory]
+    [InlineData("cucharada")]
+    [InlineData(null)]
+    public void Validate_WhenQuantityIsPositiveAndUnitIsSupportedOrOmitted_ShouldReturnNoFailures(string? unit)
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Ingredients = [new("Salt", 1.5m, unit)]
+        };
+
+        // Act
+        var failures = parameters.Validate();
+
+        // Assert
+        failures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_WhenServingsAndMinutesAreNotPositive_ShouldReturnBothFailures()
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Servings = 0,
+            PreparationMinutes = -1
+        };
+
+        // Act
+        var failurePaths = parameters.Validate().Select(failure => failure.PropertyName);
+
+        // Assert
+        failurePaths.Should().BeEquivalentTo(["Servings", "PreparationMinutes"]);
+    }
+
+    [Fact]
+    public void Validate_WhenSeveralIngredientsAndNumbersAreInvalid_ShouldReturnEveryFailurePath()
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Servings = 0,
+            Ingredients = [new("Salt", -1m, "unknown"), new("Pepper", Unit: "G")]
+        };
+
+        // Act
+        var failurePaths = parameters.Validate().Select(failure => failure.PropertyName);
+
+        // Assert
+        failurePaths.Should().BeEquivalentTo([
+            "Servings",
+            "Ingredients[0].Quantity",
+            "Ingredients[0].Unit",
+            "Ingredients[1].Unit"
+        ]);
+    }
 }

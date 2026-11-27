@@ -4,6 +4,7 @@
 | --- | --- |
 | [refine-feature](../../../AITools/skills/planning/refine-feature/SKILL.md) | Refining a feature idea into a user story, or resuming one, from the business side before technical planning. |
 | [plan-feature](../../../AITools/skills/planning/plan-feature/SKILL.md) | Agreeing a feature's implementation plan with the user, explaining progress, or documenting its outcome and deviations. |
+| [code-style](code-style/SKILL.md) | Writing or reviewing C# code and tests using the project's confirmed readability conventions; recording agreed preferences during file-by-file review. |
 | [architecture](architecture/SKILL.md) | Designing, reviewing or debugging a backend feature, validation, persistence or domain events. |
 | [integration-tests](integration-tests/SKILL.md) | Writing or debugging tests for HTTP, PostgreSQL, EF Core or outbox delivery. |
 | [unit-tests](unit-tests/SKILL.md) | Writing or reviewing isolated tests for domain rules, handlers or pure infrastructure logic. |
