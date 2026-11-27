@@ -4,7 +4,7 @@
 
 ## Skills
 
-Use the [skill index](skills/INDEX.md) to choose a skill for the task. Read the architecture skill before designing or reviewing a feature. Open the selected skill's `SKILL.md` and follow its relative links to the references that apply.
+Use the [skill index](skills/INDEX.md) to choose a skill for the task. Read the architecture skill before designing or reviewing a feature. Read [code-style](skills/code-style/SKILL.md) when writing or reviewing C# code and tests. Open the selected skill's `SKILL.md` and follow its relative links to the references that apply.
 
 For feature planning and closure, apply [plan-feature](../../AITools/skills/planning/plan-feature/SKILL.md)
 as described in the repository's [root instructions](../AGENTS.md).
@@ -27,6 +27,8 @@ Integration tests need Docker and are slow. Run them only after asking.
 Feature branches use `feature/<issue>-<description>` (for example: `feature/14-automate-testing`).
 
 ## Hard rules
+
+- Always use braces for every C# `if` and `else`, including single statements.
 
 - Do not add Aspire, MediatR, MassTransit, or packages with a commercial license such as FluentAssertions 8+. Shared building blocks go in `src/Happymeal.Common`.
 - Ask before adding any production package. Domain has no third-party packages: params implement `IValidatable` and rules are written by hand. No FluentValidation.

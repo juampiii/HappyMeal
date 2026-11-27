@@ -44,7 +44,7 @@ jobs:
           npm run build
       - name: Build
         working-directory: Happymeal-BE
-        run: dotnet build Happymeal.slnx -c Release
+        run: dotnet build Happymeal.slnx -c Release -p:EnforceCodeStyleInBuild=true
       - name: Unit tests
         working-directory: Happymeal-BE
         run: dotnet test --project tests/Happymeal.UnitTests -c Release --no-build
