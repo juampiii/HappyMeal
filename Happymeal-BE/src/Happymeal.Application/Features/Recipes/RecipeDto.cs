@@ -17,7 +17,7 @@ public sealed record RecipeDto(
     int Version = 1)
 {
     public static RecipeDto From(Recipe recipe) => new(recipe.Id, recipe.Name, recipe.Description,
-        recipe.Ingredients.OrderBy(x => x.Position).Select(x => new IngredientParams(x.Name, x.Quantity, x.Unit)).ToArray(),
+        recipe.Ingredients.OrderBy(x => x.Position).Select(x => new IngredientParams(x.Name, x.Quantity, x.Unit?.Code)).ToArray(),
         recipe.Steps, recipe.Servings, recipe.PreparationMinutes, recipe.Tags,
         recipe.IsPublished, recipe.IsHidden, recipe.Version);
 }

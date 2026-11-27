@@ -43,6 +43,12 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
             ingredients.Property(x => x.Position).ValueGeneratedNever();
             ingredients.Property(x => x.Name).IsRequired();
             ingredients.Property(x => x.Quantity).HasColumnType("numeric");
+            ingredients.Property(x => x.Unit)
+                .HasConversion(
+                    unit => unit!.Code,
+                    code => UnitOfMeasure.Create(code).Value)
+                .HasColumnType("text")
+                .IsRequired(false);
         });
         builder.Navigation(r => r.Ingredients).UsePropertyAccessMode(PropertyAccessMode.Field);
     }

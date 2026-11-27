@@ -77,9 +77,16 @@ public sealed record RecipeParams(
                 yield return new ValidationFailure($"{path}.Quantity", "Quantity must be positive.");
             }
 
-            if (ingredient.Unit is not null && !RecipeUnits.Codes.Contains(ingredient.Unit))
+            if (ingredient.Unit is not null)
             {
-                yield return new ValidationFailure($"{path}.Unit", "Unit is not supported.");
+                var unitResult = UnitOfMeasure.Create(ingredient.Unit);
+                if (unitResult.IsFailure)
+                {
+                    foreach (var message in unitResult.Error!.ValidationErrors.Values.SelectMany(messages => messages))
+                    {
+                        yield return new ValidationFailure($"{path}.Unit", message);
+                    }
+                }
             }
         }
     }

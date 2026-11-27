@@ -113,7 +113,13 @@ public sealed class Recipe : AggregateRoot, IAuditable
         Name = parameters.Name;
         NameKey = RecipeName.Key(Name);
         Description = parameters.Description;
-        _ingredients = (parameters.Ingredients ?? []).Select((x, i) => new RecipeIngredient(i, x.Name.Trim(), x.Quantity, x.Unit)).ToList();
+        _ingredients = (parameters.Ingredients ?? [])
+            .Select((ingredient, position) => new RecipeIngredient(
+                position: position,
+                name: ingredient.Name.Trim(),
+                quantity: ingredient.Quantity,
+                unit: ingredient.Unit is null ? null : UnitOfMeasure.Create(ingredient.Unit).Value))
+            .ToList();
         Steps = Array.AsReadOnly((parameters.Steps ?? []).Select(x => x.Trim()).ToArray());
         Tags = Array.AsReadOnly((parameters.Tags ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToArray());
         Servings = parameters.Servings;

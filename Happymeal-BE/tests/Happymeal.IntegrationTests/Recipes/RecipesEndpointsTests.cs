@@ -54,7 +54,8 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         var ingredient = stored.Ingredients.Single();
         ingredient.Name.Should().Be("Potato");
         ingredient.Quantity.Should().Be(200m);
-        ingredient.Unit.Should().Be("g");
+        ingredient.Unit!.Code.Should().Be("g");
+        dto.Ingredients!.Single().Unit.Should().Be("g");
         stored.Steps.Should().Equal("Cut", "Cook");
         stored.Servings.Should().Be(2);
         stored.PreparationMinutes.Should().Be(20);
@@ -215,7 +216,8 @@ public class RecipesEndpointsTests(HappymealApiFactory factory) : TestBase(facto
         var ingredient = stored.Ingredients.Single();
         ingredient.Name.Should().Be("Bread");
         ingredient.Quantity.Should().Be(2m);
-        ingredient.Unit.Should().Be("ud");
+        ingredient.Unit!.Code.Should().Be("ud");
+        dto.Ingredients!.Single().Unit.Should().Be("ud");
         stored.Steps.Should().Equal("Toast", "Assemble");
         stored.Servings.Should().Be(3);
         stored.PreparationMinutes.Should().Be(25);

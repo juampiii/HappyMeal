@@ -117,4 +117,26 @@ public class RecipeParamsTests
         // Assert
         failurePaths.Should().BeEquivalentTo(["Servings", "PreparationMinutes"]);
     }
+
+    [Fact]
+    public void Validate_WhenSeveralIngredientsAndNumbersAreInvalid_ShouldReturnEveryFailurePath()
+    {
+        // Arrange
+        var parameters = ValidParams() with
+        {
+            Servings = 0,
+            Ingredients = [new("Salt", -1m, "unknown"), new("Pepper", Unit: "G")]
+        };
+
+        // Act
+        var failurePaths = parameters.Validate().Select(failure => failure.PropertyName);
+
+        // Assert
+        failurePaths.Should().BeEquivalentTo([
+            "Servings",
+            "Ingredients[0].Quantity",
+            "Ingredients[0].Unit",
+            "Ingredients[1].Unit"
+        ]);
+    }
 }
