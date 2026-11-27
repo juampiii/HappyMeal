@@ -182,3 +182,17 @@ case/accent-insensitive creation and updates, current-recipe exclusion, unique-i
 enforcement without a precheck, concurrent equivalent-name requests, PostgreSQL 18
 `LIKE`, upgrade/downgrade preservation and model/snapshot agreement. The original
 story plan remains unchanged; this closes only the name-comparison amendment.
+
+## Review amendment — Split queries for recipe listing
+
+On 2026-11-27, the user approved using `AsSplitQuery()` for the existing
+`GET /api/recipes` listing after the [performance evaluation](recipe-query-performance.md).
+Apply it only in `RecipeRepository.GetAllAsync`, preserving the visibility filter,
+name ordering, no-tracking reads and response shape. The detail GET and the shared
+tracked `GetAsync` remain single-query reads. No global policy, paging, transaction
+isolation or database-model change is part of this amendment.
+
+Implemented and verified locally: solution build with enforced style passed
+(existing IDE0005 documentation-generation warnings only), and all 42 PostgreSQL
+integration tests passed. Existing tests verify listing contents, hidden-recipe
+filtering, step ordering and detail responses. `git diff --check` passed.

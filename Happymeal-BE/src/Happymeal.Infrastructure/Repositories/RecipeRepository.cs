@@ -23,6 +23,7 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
             .Include(r => r.Ingredients)
             .Where(r => !r.IsHidden)
             .AsNoTracking()
+            .AsSplitQuery()
             .OrderBy(r => r.Name)
             .ToListAsync(cancellationToken);
     }
