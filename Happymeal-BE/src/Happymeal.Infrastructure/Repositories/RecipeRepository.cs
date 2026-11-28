@@ -9,7 +9,7 @@ internal sealed class RecipeRepository(HappymealDbContext dbContext) : IRecipeRe
 {
     public Task<Recipe?> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return dbContext.Recipes.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        return dbContext.Recipes.AsTracking().FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)

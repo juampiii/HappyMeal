@@ -10,6 +10,7 @@ internal sealed class DesignTimeHappymealDbContext : IDesignTimeDbContextFactory
     {
         var options = new DbContextOptionsBuilder<HappymealDbContext>()
             .UseNpgsql("Host=localhost;Port=5432;Database=happymeal")
+            .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
             .Options;
 
         return new HappymealDbContext(options);
