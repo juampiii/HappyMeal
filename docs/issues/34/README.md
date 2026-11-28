@@ -4,9 +4,9 @@
 
 **Plan status:** Agreed; original plans preserved in [implementation history](implementation-history.md)
 
-**Delivery status:** Implemented; awaiting final PR review and merge into `develop`
+**Delivery status:** Implemented and merged into `develop` through [PR #28](https://github.com/juampiii/HappyMeal/pull/28) on 2026-11-27; testing deployment not yet verified
 
-**Last review:** 2026-11-27
+**Last review:** 2026-11-28
 
 **Origin:** Closure summary reconstructed from the agreed amendments, code, tests and merged component PRs.
 
@@ -50,7 +50,8 @@ Backend [PR #26](https://github.com/juampiii/HappyMeal/pull/26) and frontend
 [PR #27](https://github.com/juampiii/HappyMeal/pull/27) are merged into
 `feature/34-manage-recipes`. They were reviewed separately so that domain/API
 changes and UI changes could be assessed independently. The final feature PR
-targets `develop` and remains open for the user's last review.
+[#28](https://github.com/juampiii/HappyMeal/pull/28) targeting `develop` was
+merged on 2026-11-27.
 
 The original agreed plans and intermediate verification are preserved verbatim
 in [implementation history](implementation-history.md). Later agreements supersede
@@ -77,7 +78,8 @@ changes describe intermediate states, not the current delivery.
 
 ## Remaining closure steps
 
-1. Review and merge the final feature PR into `develop` after its checks pass.
+1. Done: the final feature PR [#28](https://github.com/juampiii/HappyMeal/pull/28)
+   was merged into `develop` on 2026-11-27.
 2. Check the resulting image publication, migration and API deployment to testing.
    These jobs are triggered after merge, subject to the deployment configuration;
    this feature revision has not been deployed or verified there yet.
